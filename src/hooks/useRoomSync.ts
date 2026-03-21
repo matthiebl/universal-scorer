@@ -16,9 +16,10 @@ interface UseRoomSyncResult {
 /**
  * Syncs a game with a Firebase Realtime Database room.
  *
- * - Pushes every local dispatch to Firebase (debounced).
- * - Receives remote updates and dispatches REMOTE_UPDATE to the reducer.
- * - Skips re-pushing updates that originated from remote (loop prevention).
+ * - Subscribes to Firebase for remote changes (onValue).
+ * - Pushes every local change to Firebase (debounced 400ms).
+ * - Uses fromRemoteRef to skip pushing updates that came from Firebase
+ *   (prevents echo loops without relying on timestamp comparisons).
  */
 export function useRoomSync(
   game: Game,
@@ -27,14 +28,15 @@ export function useRoomSync(
   const [status, setStatus] = useState<RoomStatus>('offline');
   const [error, setError] = useState<string | null>(null);
 
-  // Ref to the active room code so callbacks always see latest value.
   const roomCodeRef = useRef<string | null>(game.roomCode ?? null);
-  // Track whether the last game update came from remote (to avoid push loops).
-  const isRemoteUpdateRef = useRef(false);
-  // Debounce timer for outgoing pushes.
+  // Set to true immediately before dispatching a REMOTE_UPDATE so the push
+  // effect knows not to echo it back to Firebase.
+  const fromRemoteRef = useRef(false);
   const pushTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  // Unsubscribe fn for the current listener.
   const unsubscribeRef = useRef<(() => void) | null>(null);
+  // Keep dispatch stable in callbacks without needing it in dep arrays.
+  const dispatchRef = useRef(dispatch);
+  dispatchRef.current = dispatch;
 
   const stopListening = useCallback(() => {
     unsubscribeRef.current?.();
@@ -48,31 +50,43 @@ export function useRoomSync(
     unsubscribeRef.current = subscribeToRoom(
       code,
       (remoteGame) => {
-        // Only apply if the remote game is newer than local.
-        if (remoteGame.updatedAt > game.updatedAt || isRemoteUpdateRef.current === false) {
-          isRemoteUpdateRef.current = true;
-          dispatch({ type: 'REMOTE_UPDATE', game: remoteGame });
-          isRemoteUpdateRef.current = false;
-        }
+        // Mark update as remote BEFORE dispatching so the push effect sees it.
+        fromRemoteRef.current = true;
+        dispatchRef.current({ type: 'REMOTE_UPDATE', game: remoteGame });
         setStatus('online');
         setError(null);
       },
       () => {
+        console.error('[RoomSync] room not found or deleted:', code);
         setStatus('error');
         setError('Room not found or was deleted.');
         stopListening();
       },
+      (err) => {
+        console.error('[RoomSync] subscription error:', err);
+        setStatus('error');
+        setError(`Sync error: ${err.message}`);
+        stopListening();
+      },
     );
-  }, [dispatch, game.updatedAt, stopListening]);
+  }, [stopListening]);
 
   // Push local changes to Firebase, debounced by 400ms.
+  // Skips remote-originated updates to prevent echo loops.
   useEffect(() => {
     const code = roomCodeRef.current;
-    if (!code || status !== 'online' || isRemoteUpdateRef.current) return;
+    if (!code || status !== 'online') return;
+
+    // This update came from Firebase — don't push it back.
+    if (fromRemoteRef.current) {
+      fromRemoteRef.current = false;
+      return;
+    }
 
     if (pushTimerRef.current) clearTimeout(pushTimerRef.current);
     pushTimerRef.current = setTimeout(() => {
       pushGameUpdate(code, game).catch((err) => {
+        console.error('[RoomSync] push failed:', err);
         setStatus('error');
         setError(String(err));
       });
@@ -101,15 +115,18 @@ export function useRoomSync(
     try {
       const code = await createRoom(game);
       roomCodeRef.current = code;
-      dispatch({ type: 'REMOTE_UPDATE', game: { ...game, roomCode: code } });
+      // Mark as remote so the initial subscription echo isn't pushed back.
+      fromRemoteRef.current = true;
+      dispatchRef.current({ type: 'REMOTE_UPDATE', game: { ...game, roomCode: code } });
       startListening(code);
       return code;
     } catch (err) {
+      console.error('[RoomSync] createRoom failed:', err);
       setStatus('error');
       setError(String(err));
       throw err;
     }
-  }, [game, dispatch, startListening]);
+  }, [game, startListening]);
 
   const joinRoomByCode = useCallback(async (code: string): Promise<boolean> => {
     setStatus('connecting');
@@ -122,23 +139,26 @@ export function useRoomSync(
         return false;
       }
       roomCodeRef.current = code;
-      dispatch({ type: 'REMOTE_UPDATE', game: remoteGame });
+      fromRemoteRef.current = true;
+      dispatchRef.current({ type: 'REMOTE_UPDATE', game: remoteGame });
       startListening(code);
       return true;
     } catch (err) {
+      console.error('[RoomSync] joinRoom failed:', err);
       setStatus('error');
       setError(String(err));
       return false;
     }
-  }, [dispatch, startListening]);
+  }, [startListening]);
 
   const leaveRoom = useCallback(() => {
     stopListening();
     roomCodeRef.current = null;
+    fromRemoteRef.current = false;
     setStatus('offline');
     setError(null);
-    dispatch({ type: 'REMOTE_UPDATE', game: { ...game, roomCode: undefined } });
-  }, [stopListening, dispatch, game]);
+    dispatchRef.current({ type: 'REMOTE_UPDATE', game: { ...game, roomCode: undefined } });
+  }, [stopListening, game]);
 
   return { status, error, startRoom, joinRoomByCode, leaveRoom };
 }
