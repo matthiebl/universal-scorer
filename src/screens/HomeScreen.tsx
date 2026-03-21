@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
 import type { Player, Game } from '../types/game';
+import type { Preset } from '../types/preset';
 import { createEmptyGame } from '../state/gameReducer';
 import { useGameList } from '../state/useGameList';
 import { saveGame } from '../services/storage';
@@ -15,14 +16,18 @@ export function HomeScreen() {
   const navigate = useNavigate();
   const { theme, toggleTheme } = useTheme();
 
-  const handleCreate = (name: string, players: Omit<Player, 'id' | 'order'>[]) => {
+  const handleCreate = (name: string, players: Omit<Player, 'id' | 'order'>[], preset: Preset | null) => {
     const game: Game = {
       ...createEmptyGame(name),
+      presetId: preset?.id,
       players: players.map((p, i) => ({
         ...p,
         id: crypto.randomUUID(),
         order: i,
       })),
+      rows: preset
+        ? preset.rows.map((r, i) => ({ ...r, id: crypto.randomUUID(), order: i }))
+        : [],
     };
     saveGame(game);
     refresh();
@@ -39,6 +44,14 @@ export function HomeScreen() {
       <header className="sticky top-0 z-10 bg-zinc-50/80 dark:bg-zinc-950/80 backdrop-blur-lg border-b border-zinc-200 dark:border-zinc-800">
         <div className="max-w-lg mx-auto flex items-center justify-between px-4 h-14">
           <h1 className="text-xl font-bold text-zinc-900 dark:text-zinc-100">Game Scorer</h1>
+          <div className="flex items-center gap-1">
+          <button
+            onClick={() => navigate('/presets')}
+            className="p-2 rounded-lg text-zinc-500 hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-colors text-sm font-medium"
+            aria-label="Presets"
+          >
+            Presets
+          </button>
           <button
             onClick={toggleTheme}
             className="p-2 rounded-lg text-zinc-500 hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-colors"
@@ -54,6 +67,7 @@ export function HomeScreen() {
               </svg>
             )}
           </button>
+          </div>
         </div>
       </header>
 

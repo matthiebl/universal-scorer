@@ -1,25 +1,31 @@
 import { useState } from 'react';
 import type { Player } from '../../types/game';
+import type { Preset } from '../../types/preset';
 import { Modal } from '../layout/Modal';
 import { Input } from '../shared/Input';
 import { Button } from '../shared/Button';
 import { PlayerSetup } from './PlayerSetup';
+import { PresetPicker } from './PresetPicker';
+import { loadSavedPresets } from '../../services/storage';
 
 interface NewGameDialogProps {
   open: boolean;
   onClose: () => void;
-  onCreate: (name: string, players: Omit<Player, 'id' | 'order'>[]) => void;
+  onCreate: (name: string, players: Omit<Player, 'id' | 'order'>[], preset: Preset | null) => void;
 }
 
 export function NewGameDialog({ open, onClose, onCreate }: NewGameDialogProps) {
   const [name, setName] = useState('');
   const [players, setPlayers] = useState<Omit<Player, 'id' | 'order'>[]>([]);
+  const [selectedPreset, setSelectedPreset] = useState<Preset | null>(null);
+  const savedPresets = loadSavedPresets();
 
   const handleCreate = () => {
     const gameName = name.trim() || 'New Game';
-    onCreate(gameName, players);
+    onCreate(gameName, players, selectedPreset);
     setName('');
     setPlayers([]);
+    setSelectedPreset(null);
     onClose();
   };
 
@@ -33,6 +39,12 @@ export function NewGameDialog({ open, onClose, onCreate }: NewGameDialogProps) {
           placeholder="e.g. Friday Night Catan"
           value={name}
           onChange={(e) => setName(e.target.value)}
+        />
+
+        <PresetPicker
+          savedPresets={savedPresets}
+          selected={selectedPreset}
+          onSelect={setSelectedPreset}
         />
 
         <PlayerSetup players={players} onChange={setPlayers} />
