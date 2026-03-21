@@ -20,6 +20,7 @@ export function HomeScreen() {
     const game: Game = {
       ...createEmptyGame(name),
       presetId: preset?.id,
+      increments: preset?.increments,
       players: players.map((p, i) => ({
         ...p,
         id: crypto.randomUUID(),

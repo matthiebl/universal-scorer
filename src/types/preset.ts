@@ -6,6 +6,7 @@ export interface Preset {
   description?: string;
   suggestedPlayerCount?: { min: number; max: number };
   rows: Omit<ScoreRow, 'id'>[];
+  increments?: number[];
   isBuiltIn: boolean;
   isPublic: boolean;
   createdAt: number;

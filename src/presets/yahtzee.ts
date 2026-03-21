@@ -5,6 +5,7 @@ export const yahtzeePreset: Preset = {
   name: 'Yahtzee',
   description: 'Classic Yahtzee with upper/lower sections and automatic bonus calculation',
   suggestedPlayerCount: { min: 2, max: 6 },
+  increments: [1, 2, 3, 4, 5, 6],
   isBuiltIn: true,
   isPublic: false,
   createdAt: 0,

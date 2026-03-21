@@ -12,6 +12,7 @@ interface ScoreEntryModalProps {
   playerName: string;
   playerColor: string;
   rowLabel: string;
+  increments?: number[];
 }
 
 export function ScoreEntryModal({
@@ -22,6 +23,7 @@ export function ScoreEntryModal({
   playerName,
   playerColor,
   rowLabel,
+  increments,
 }: ScoreEntryModalProps) {
   const [display, setDisplay] = useState('');
 
@@ -95,7 +97,7 @@ export function ScoreEntryModal({
         </div>
 
         {/* Increment buttons */}
-        <IncrementButtons onIncrement={handleIncrement} />
+        <IncrementButtons onIncrement={handleIncrement} increments={increments} />
 
         {/* Number pad */}
         <NumberPad

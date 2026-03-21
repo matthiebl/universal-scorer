@@ -48,6 +48,7 @@ export interface Game {
   id: ID;
   name: string;
   presetId?: ID;
+  increments?: number[];
   players: Player[];
   rows: ScoreRow[];
   scores: Record<string, ScoreEntry>;

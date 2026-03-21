@@ -5,6 +5,7 @@ export const catanPreset: Preset = {
   name: 'Catan',
   description: 'Track victory points across settlements, cities, roads, army, and dev cards',
   suggestedPlayerCount: { min: 3, max: 4 },
+  increments: [-2, -1, 1, 2],
   isBuiltIn: true,
   isPublic: false,
   createdAt: 0,

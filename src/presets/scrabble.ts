@@ -5,6 +5,7 @@ export const scrabblePreset: Preset = {
   name: 'Scrabble',
   description: 'Score each turn across up to 15 rounds',
   suggestedPlayerCount: { min: 2, max: 4 },
+  increments: [-10, -5, 5, 10, 25, 50],
   isBuiltIn: true,
   isPublic: false,
   createdAt: 0,

@@ -152,6 +152,7 @@ export function GameScreen() {
         playerName={selectedPlayer?.name ?? ''}
         playerColor={selectedPlayer?.color ?? '#888'}
         rowLabel={selectedRow?.label ?? ''}
+        increments={game.increments}
       />
 
       {/* Settings */}
