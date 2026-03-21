@@ -4,7 +4,10 @@ import { BottomSheet } from '../components/layout/BottomSheet';
 import { PlayerManager } from '../components/settings/PlayerManager';
 import { RowManager } from '../components/settings/RowManager';
 import { PlayerSetup } from '../components/home/PlayerSetup';
+import { Input } from '../components/shared/Input';
+import { Button } from '../components/shared/Button';
 import type { Player } from '../types/game';
+import { savePreset } from '../services/storage';
 import { cn } from '../lib/cn';
 
 type Tab = 'players' | 'rows';
@@ -18,6 +21,8 @@ export function GameSettingsScreen({ open, onClose }: GameSettingsScreenProps) {
   const { game, dispatch } = useGame();
   const [tab, setTab] = useState<Tab>('players');
   const [newPlayers, setNewPlayers] = useState<Omit<Player, 'id' | 'order'>[]>([]);
+  const [savePresetOpen, setSavePresetOpen] = useState(false);
+  const [presetName, setPresetName] = useState('');
 
   const sortedPlayers = [...game.players].sort((a, b) => a.order - b.order);
   const sortedRows = [...game.rows].sort((a, b) => a.order - b.order);
@@ -45,6 +50,21 @@ export function GameSettingsScreen({ open, onClose }: GameSettingsScreenProps) {
     setNewPlayers([]);
   };
 
+  const handleSavePreset = () => {
+    const name = presetName.trim() || game.name;
+    savePreset({
+      id: crypto.randomUUID(),
+      name,
+      description: `Saved from "${game.name}"`,
+      rows: game.rows.map(({ id: _id, ...rest }) => rest),
+      isBuiltIn: false,
+      isPublic: false,
+      createdAt: Date.now(),
+    });
+    setPresetName('');
+    setSavePresetOpen(false);
+  };
+
   const handleRowMoveUp = (rowId: string) => {
     const idx = sortedRows.findIndex((r) => r.id === rowId);
     if (idx <= 0) return;
@@ -62,6 +82,7 @@ export function GameSettingsScreen({ open, onClose }: GameSettingsScreenProps) {
   };
 
   return (
+    <>
     <BottomSheet open={open} onClose={onClose} title="Settings">
       <div className="space-y-4">
         {/* Tab bar */}
@@ -116,7 +137,40 @@ export function GameSettingsScreen({ open, onClose }: GameSettingsScreenProps) {
             onMoveDown={handleRowMoveDown}
           />
         )}
+
+        {/* Save as preset */}
+        {game.rows.length > 0 && (
+          <div className="border-t border-zinc-200 dark:border-zinc-700 pt-4">
+            <button
+              onClick={() => { setPresetName(game.name); setSavePresetOpen(true); }}
+              className="w-full py-2.5 rounded-xl border border-zinc-300 dark:border-zinc-600 text-sm font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors"
+            >
+              Save rows as preset
+            </button>
+          </div>
+        )}
       </div>
     </BottomSheet>
+
+    {/* Save preset sheet */}
+    <BottomSheet open={savePresetOpen} onClose={() => setSavePresetOpen(false)} title="Save as Preset">
+      <div className="space-y-4">
+        <p className="text-sm text-zinc-500 dark:text-zinc-400">
+          Save the current row layout as a reusable preset for future games.
+        </p>
+        <Input
+          label="Preset Name"
+          value={presetName}
+          onChange={(e) => setPresetName(e.target.value)}
+          onKeyDown={(e) => { if (e.key === 'Enter' && presetName.trim()) handleSavePreset(); }}
+          autoFocus
+        />
+        <div className="flex gap-3">
+          <Button variant="ghost" onClick={() => setSavePresetOpen(false)} className="flex-1">Cancel</Button>
+          <Button onClick={handleSavePreset} disabled={!presetName.trim()} className="flex-1">Save Preset</Button>
+        </div>
+      </div>
+    </BottomSheet>
+    </>
   );
 }
