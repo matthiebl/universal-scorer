@@ -136,7 +136,7 @@ export function GameScreen() {
 
       {/* Score Table */}
       <main className="flex-1 min-h-0 flex flex-col">
-        <div className="max-w-lg mx-auto w-full flex-1 min-h-0 overflow-auto">
+        <div className="w-fit min-w-[min(32rem,100%)] max-w-full mx-auto flex-1 min-h-0 overflow-auto">
           <ScoreTable game={game} onCellClick={handleCellClick} />
           <AddRowButton
             nextRoundNumber={roundCount + 1}
