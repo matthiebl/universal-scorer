@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { BottomSheet } from '../layout/BottomSheet';
 import { Button } from '../shared/Button';
 import type { Game, ID } from '../../types/game';
@@ -14,10 +14,6 @@ interface EndGameModalProps {
 export function EndGameModal({ open, onClose, game, onEndGame }: EndGameModalProps) {
   const [selectedIds, setSelectedIds] = useState<Set<ID>>(new Set());
 
-  const sortedPlayers = [...game.players]
-    .map((p) => ({ ...p, total: computePlayerTotal(game, p) }))
-    .sort((a, b) => b.total - a.total);
-
   const togglePlayer = useCallback((id: ID) => {
     setSelectedIds((prev) => {
       const next = new Set(prev);
@@ -26,6 +22,15 @@ export function EndGameModal({ open, onClose, game, onEndGame }: EndGameModalPro
       return next;
     });
   }, []);
+
+  const sortedPlayers = useMemo(() => {
+    if (!open) return [];
+    return [...game.players]
+      .map((p) => ({ ...p, total: computePlayerTotal(game, p) }))
+      .sort((a, b) => b.total - a.total);
+  }, [open, game.players, game.scores, game.rows]);
+
+  if (!open) return null;
 
   const handleConfirm = () => {
     onEndGame(Array.from(selectedIds));

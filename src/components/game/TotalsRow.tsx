@@ -1,12 +1,18 @@
+import { memo, useMemo } from 'react';
 import type { Game } from '../../types/game';
-import { computePlayerTotal } from '../../lib/scoring';
+import { getPlayerTotal } from '../../lib/scoring';
+import type { ScoreMap } from '../../lib/scoring';
 
 interface TotalsRowProps {
   game: Game;
+  scoreMap: ScoreMap;
 }
 
-export function TotalsRow({ game }: TotalsRowProps) {
-  const sortedPlayers = [...game.players].sort((a, b) => a.order - b.order);
+export const TotalsRow = memo(function TotalsRow({ game, scoreMap }: TotalsRowProps) {
+  const sortedPlayers = useMemo(
+    () => [...game.players].sort((a, b) => a.order - b.order),
+    [game.players],
+  );
 
   return (
     <tr className="border-t-2 border-zinc-300 dark:border-zinc-600 bg-zinc-100 dark:bg-zinc-800/50">
@@ -16,10 +22,10 @@ export function TotalsRow({ game }: TotalsRowProps) {
       {sortedPlayers.map((player) => (
         <td key={player.id} className="px-2 py-2 text-center">
           <span className="text-lg font-bold font-mono" style={{ color: player.color }}>
-            {computePlayerTotal(game, player)}
+            {getPlayerTotal(scoreMap, game, player.id)}
           </span>
         </td>
       ))}
     </tr>
   );
-}
+});

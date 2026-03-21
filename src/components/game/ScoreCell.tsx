@@ -1,21 +1,28 @@
-import { memo } from 'react';
+import { memo, useCallback } from 'react';
 import { cn } from '../../lib/cn';
+import type { ID } from '../../types/game';
 
 interface ScoreCellProps {
   value: number | null;
   isComputed: boolean;
   playerColor: string;
-  onClick: () => void;
+  rowId: ID;
+  playerId: ID;
+  onCellClick: (rowId: ID, playerId: ID) => void;
 }
 
-export const ScoreCell = memo(function ScoreCell({ value, isComputed, playerColor, onClick }: ScoreCellProps) {
+export const ScoreCell = memo(function ScoreCell({ value, isComputed, playerColor, rowId, playerId, onCellClick }: ScoreCellProps) {
   const hasValue = value != null;
+
+  const handleClick = useCallback(() => {
+    onCellClick(rowId, playerId);
+  }, [onCellClick, rowId, playerId]);
 
   return (
     <td className="px-1 py-1 text-center">
       <button
         type="button"
-        onClick={onClick}
+        onClick={handleClick}
         disabled={isComputed}
         className={cn(
           'w-full min-h-11 rounded-lg text-base font-mono font-medium transition-all',

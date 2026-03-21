@@ -1,6 +1,7 @@
-import { Fragment } from 'react';
+import { Fragment, useMemo } from 'react';
 import type { Game, ID, ScoreRow } from '../../types/game';
-import { computeScore } from '../../lib/scoring';
+import { computeAllScores, getScore } from '../../lib/scoring';
+import type { ScoreMap } from '../../lib/scoring';
 import { PlayerHeader } from './PlayerHeader';
 import { ScoreCell } from './ScoreCell';
 import { TotalsRow } from './TotalsRow';
@@ -39,9 +40,16 @@ function buildTree(rows: ScoreRow[]): { group: ScoreRow | null; children: ScoreR
 }
 
 export function ScoreTable({ game, onCellClick }: ScoreTableProps) {
-  const sortedPlayers = [...game.players].sort((a, b) => a.order - b.order);
-  const sections = buildTree(game.rows);
-  const hasRows = game.rows.some((r) => r.type !== 'group') || game.rows.some((r) => r.type === 'group');
+  const sortedPlayers = useMemo(
+    () => [...game.players].sort((a, b) => a.order - b.order),
+    [game.players],
+  );
+  const sections = useMemo(() => buildTree(game.rows), [game.rows]);
+  const scoreMap: ScoreMap = useMemo(
+    () => computeAllScores(game),
+    [game.rows, game.players, game.scores],
+  );
+  const hasRows = game.rows.length > 0;
 
   if (game.players.length === 0) {
     return (
@@ -101,10 +109,12 @@ export function ScoreTable({ game, onCellClick }: ScoreTableProps) {
                       {sortedPlayers.map((player) => (
                         <ScoreCell
                           key={player.id}
-                          value={computeScore(game, row, player)}
+                          value={getScore(scoreMap, row.id, player.id)}
                           isComputed={isComputed}
                           playerColor={player.color}
-                          onClick={() => onCellClick(row.id, player.id)}
+                          rowId={row.id}
+                          playerId={player.id}
+                          onCellClick={onCellClick}
                         />
                       ))}
                     </tr>
@@ -118,7 +128,7 @@ export function ScoreTable({ game, onCellClick }: ScoreTableProps) {
                     </td>
                     {sortedPlayers.map((player) => {
                       const subtotal = section.children.reduce(
-                        (sum, row) => sum + (computeScore(game, row, player) ?? 0),
+                        (sum, row) => sum + (getScore(scoreMap, row.id, player.id) ?? 0),
                         0,
                       );
                       return (
@@ -134,7 +144,9 @@ export function ScoreTable({ game, onCellClick }: ScoreTableProps) {
               </Fragment>
             ))
           )}
-          {game.rows.filter((r) => r.type !== 'group').length > 0 && <TotalsRow game={game} />}
+          {game.rows.filter((r) => r.type !== 'group').length > 0 && (
+            <TotalsRow game={game} scoreMap={scoreMap} />
+          )}
         </tbody>
       </table>
     </div>
