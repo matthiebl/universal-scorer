@@ -5,10 +5,12 @@ import { scoreKey } from '../types/game';
 import type { ID } from '../types/game';
 import { ScoreTable } from '../components/game/ScoreTable';
 import { AddRowButton } from '../components/game/AddRowButton';
+import { EndGameModal } from '../components/game/EndGameModal';
 import { ScoreEntryModal } from '../components/score-entry/ScoreEntryModal';
 import { DiceRoller } from '../components/dice/DiceRoller';
 import { GameSettingsScreen } from './GameSettingsScreen';
 import { useRoomSync } from '../hooks/useRoomSync';
+import { fireConfetti } from '../lib/confetti';
 import { cn } from '../lib/cn';
 
 interface CellSelection {
@@ -22,6 +24,7 @@ export function GameScreen() {
   const [selectedCell, setSelectedCell] = useState<CellSelection | null>(null);
   const [diceOpen, setDiceOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [endGameOpen, setEndGameOpen] = useState(false);
 
   const { status: roomStatus, error: roomError, startRoom, leaveRoom } = useRoomSync(game, dispatch);
 
@@ -65,6 +68,22 @@ export function GameScreen() {
   const selectedEntry = selectedCell
     ? game.scores[scoreKey(selectedCell.rowId, selectedCell.playerId)]
     : undefined;
+
+  const handleEndGame = useCallback(
+    (winnerIds: ID[]) => {
+      dispatch({ type: 'END_GAME', winnerIds });
+      setTimeout(() => fireConfetti(), 150);
+    },
+    [dispatch],
+  );
+
+  const handleReopenGame = useCallback(() => {
+    dispatch({ type: 'SET_STATUS', status: 'active' });
+  }, [dispatch]);
+
+  const winners = game.winnerIds
+    ?.map((id) => game.players.find((p) => p.id === id))
+    .filter(Boolean) ?? [];
 
   const roundCount = game.rows.filter((r) => r.type === 'round').length;
 
@@ -134,16 +153,55 @@ export function GameScreen() {
         </div>
       </header>
 
+      {/* Winner banner */}
+      {game.status === 'completed' && winners.length > 0 && (
+        <div className="bg-amber-50 dark:bg-amber-950/30 border-b border-amber-200 dark:border-amber-800 px-4 py-3">
+          <div className="max-w-lg mx-auto flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="text-amber-600 dark:text-amber-400 text-lg" role="img" aria-label="Trophy">&#127942;</span>
+              <p className="text-sm font-medium text-amber-800 dark:text-amber-200 truncate">
+                {winners.length === 1
+                  ? `${winners[0]!.name} wins!`
+                  : `${winners.map((w) => w!.name).join(' & ')} win!`}
+              </p>
+            </div>
+            <button
+              onClick={handleReopenGame}
+              className="shrink-0 text-xs font-medium text-amber-700 dark:text-amber-300 underline underline-offset-2 min-h-11 flex items-center"
+              aria-label="Reopen game"
+            >
+              Reopen
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Score Table */}
       <main className="flex-1 min-h-0 flex flex-col">
         <div className="w-fit min-w-[min(32rem,100%)] max-w-full mx-auto flex-1 min-h-0 overflow-auto">
           <ScoreTable game={game} onCellClick={handleCellClick} />
-          <AddRowButton
-            nextRoundNumber={roundCount + 1}
-            onAddRow={handleAddRow}
-          />
+          {game.status === 'active' && (
+            <AddRowButton
+              nextRoundNumber={roundCount + 1}
+              onAddRow={handleAddRow}
+            />
+          )}
         </div>
       </main>
+
+      {/* End Game button (footer) */}
+      {game.status === 'active' && game.players.length > 0 && game.rows.length > 0 && (
+        <div className="border-t border-zinc-200 dark:border-zinc-800 bg-zinc-50/80 dark:bg-zinc-950/80 backdrop-blur-lg px-4 py-3">
+          <div className="max-w-lg mx-auto">
+            <button
+              onClick={() => setEndGameOpen(true)}
+              className="w-full py-3 rounded-xl bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 text-sm font-semibold transition-colors active:opacity-80 min-h-12"
+            >
+              End Game
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Score Entry Modal */}
       <ScoreEntryModal
@@ -173,6 +231,14 @@ export function GameScreen() {
         onClose={() => setDiceOpen(false)}
         onRoll={handleDiceRoll}
         history={game.diceHistory}
+      />
+
+      {/* End Game Modal */}
+      <EndGameModal
+        open={endGameOpen}
+        onClose={() => setEndGameOpen(false)}
+        game={game}
+        onEndGame={handleEndGame}
       />
     </div>
   );

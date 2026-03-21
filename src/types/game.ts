@@ -54,6 +54,7 @@ export interface Game {
   scores: Record<string, ScoreEntry>;
   diceHistory: DiceRoll[];
   status: 'active' | 'completed';
+  winnerIds?: ID[];
   createdAt: number;
   updatedAt: number;
   roomCode?: string;

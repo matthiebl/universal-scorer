@@ -12,6 +12,7 @@ export type GameAction =
   | { type: 'REORDER_ROWS'; rowIds: ID[] }
   | { type: 'ADD_DICE_ROLL'; dice: { sides: number; result: number }[]; total: number; label?: string }
   | { type: 'SET_STATUS'; status: Game['status'] }
+  | { type: 'END_GAME'; winnerIds: ID[] }
   | { type: 'SET_NAME'; name: string }
   | { type: 'REMOTE_UPDATE'; game: Game }
   | { type: 'LOAD_GAME'; game: Game };

@@ -149,6 +149,10 @@ export function gameReducer(state: Game, action: GameAction): Game {
       return { ...state, status: action.status, updatedAt: now };
     }
 
+    case 'END_GAME': {
+      return { ...state, status: 'completed', winnerIds: action.winnerIds, updatedAt: now };
+    }
+
     case 'SET_NAME': {
       return { ...state, name: action.name, updatedAt: now };
     }
