@@ -159,7 +159,8 @@ export function PresetsScreen() {
     try {
       const presets = await loadCommunityPresets();
       setCommunityPresets(presets);
-    } catch {
+    } catch (err) {
+      console.error('[Presets] loadCommunityPresets failed:', err);
       setCommunityError('Failed to load community presets. Check your connection.');
     } finally {
       setCommunityLoading(false);

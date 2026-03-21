@@ -6,12 +6,11 @@ import {
   getDocs,
   query,
   where,
-  orderBy,
 } from 'firebase/firestore';
 import { firestore } from './firebase';
 import type { Preset } from '../types/preset';
 
-const PRESETS_COL = 'presets';
+const PRESETS_COL = 'ScorerPresets';
 
 /** Publish a preset to Firestore so others can browse and use it. */
 export async function publishPreset(preset: Preset): Promise<void> {
@@ -32,8 +31,9 @@ export async function loadCommunityPresets(): Promise<Preset[]> {
   const q = query(
     collection(firestore, PRESETS_COL),
     where('isPublic', '==', true),
-    orderBy('publishedAt', 'desc'),
   );
   const snap = await getDocs(q);
-  return snap.docs.map((d) => d.data() as Preset);
+  const presets = snap.docs.map((d) => d.data() as Preset);
+  // Sort client-side to avoid needing a Firestore composite index.
+  return presets.sort((a, b) => ((b as Preset & { publishedAt?: number }).publishedAt ?? 0) - ((a as Preset & { publishedAt?: number }).publishedAt ?? 0));
 }
