@@ -136,11 +136,13 @@ export function GameScreen() {
 
       {/* Score Table */}
       <main className="flex-1 flex flex-col">
-        <ScoreTable game={game} onCellClick={handleCellClick} />
-        <AddRowButton
-          nextRoundNumber={roundCount + 1}
-          onAddRow={handleAddRow}
-        />
+        <div className="max-w-lg mx-auto w-full flex-1 flex flex-col">
+          <ScoreTable game={game} onCellClick={handleCellClick} />
+          <AddRowButton
+            nextRoundNumber={roundCount + 1}
+            onAddRow={handleAddRow}
+          />
+        </div>
       </main>
 
       {/* Score Entry Modal */}

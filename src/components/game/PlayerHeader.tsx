@@ -6,7 +6,7 @@ interface PlayerHeaderProps {
 
 export function PlayerHeader({ player }: PlayerHeaderProps) {
   return (
-    <th className="px-2 py-2 text-center w-18">
+    <th className="px-2 py-2 text-center w-18 bg-zinc-50 dark:bg-zinc-950">
       <div className="flex flex-col items-center gap-1">
         <div
           className="w-7 h-7 rounded-full shrink-0"
