@@ -3,21 +3,31 @@ import { useGame } from '../state/useGame';
 import { BottomSheet } from '../components/layout/BottomSheet';
 import { PlayerManager } from '../components/settings/PlayerManager';
 import { RowManager } from '../components/settings/RowManager';
+import { RoomManager } from '../components/settings/RoomManager';
 import { PlayerSetup } from '../components/home/PlayerSetup';
 import { Input } from '../components/shared/Input';
 import { Button } from '../components/shared/Button';
 import type { Player } from '../types/game';
+import type { RoomStatus } from '../hooks/useRoomSync';
 import { savePreset } from '../services/storage';
 import { cn } from '../lib/cn';
 
-type Tab = 'players' | 'rows';
+type Tab = 'players' | 'rows' | 'room';
 
 interface GameSettingsScreenProps {
   open: boolean;
   onClose: () => void;
+  roomStatus: RoomStatus;
+  roomError: string | null;
+  onCreateRoom: () => Promise<string>;
+  onLeaveRoom: () => void;
 }
 
-export function GameSettingsScreen({ open, onClose }: GameSettingsScreenProps) {
+export function GameSettingsScreen({
+  open, onClose,
+  roomStatus, roomError,
+  onCreateRoom, onLeaveRoom,
+}: GameSettingsScreenProps) {
   const { game, dispatch } = useGame();
   const [tab, setTab] = useState<Tab>('players');
   const [newPlayers, setNewPlayers] = useState<Omit<Player, 'id' | 'order'>[]>([]);
@@ -81,13 +91,15 @@ export function GameSettingsScreen({ open, onClose }: GameSettingsScreenProps) {
     dispatch({ type: 'REORDER_ROWS', rowIds: ids });
   };
 
+  const tabs: Tab[] = ['players', 'rows', 'room'];
+
   return (
     <>
     <BottomSheet open={open} onClose={onClose} title="Settings">
       <div className="space-y-4">
         {/* Tab bar */}
         <div className="flex rounded-xl bg-zinc-100 dark:bg-zinc-800 p-1 gap-1">
-          {(['players', 'rows'] as Tab[]).map((t) => (
+          {tabs.map((t) => (
             <button
               key={t}
               onClick={() => setTab(t)}
@@ -129,25 +141,36 @@ export function GameSettingsScreen({ open, onClose }: GameSettingsScreenProps) {
 
         {/* Rows tab */}
         {tab === 'rows' && (
-          <RowManager
-            rows={game.rows}
-            onUpdate={(id, label) => dispatch({ type: 'UPDATE_ROW', rowId: id, updates: { label } })}
-            onRemove={(id) => dispatch({ type: 'REMOVE_ROW', rowId: id })}
-            onMoveUp={handleRowMoveUp}
-            onMoveDown={handleRowMoveDown}
-          />
+          <>
+            <RowManager
+              rows={game.rows}
+              onUpdate={(id, label) => dispatch({ type: 'UPDATE_ROW', rowId: id, updates: { label } })}
+              onRemove={(id) => dispatch({ type: 'REMOVE_ROW', rowId: id })}
+              onMoveUp={handleRowMoveUp}
+              onMoveDown={handleRowMoveDown}
+            />
+            {game.rows.length > 0 && (
+              <div className="border-t border-zinc-200 dark:border-zinc-700 pt-4">
+                <button
+                  onClick={() => { setPresetName(game.name); setSavePresetOpen(true); }}
+                  className="w-full py-2.5 rounded-xl border border-zinc-300 dark:border-zinc-600 text-sm font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors"
+                >
+                  Save rows as preset
+                </button>
+              </div>
+            )}
+          </>
         )}
 
-        {/* Save as preset */}
-        {game.rows.length > 0 && (
-          <div className="border-t border-zinc-200 dark:border-zinc-700 pt-4">
-            <button
-              onClick={() => { setPresetName(game.name); setSavePresetOpen(true); }}
-              className="w-full py-2.5 rounded-xl border border-zinc-300 dark:border-zinc-600 text-sm font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors"
-            >
-              Save rows as preset
-            </button>
-          </div>
+        {/* Room tab */}
+        {tab === 'room' && (
+          <RoomManager
+            roomCode={game.roomCode}
+            status={roomStatus}
+            error={roomError}
+            onCreateRoom={onCreateRoom}
+            onLeaveRoom={onLeaveRoom}
+          />
         )}
       </div>
     </BottomSheet>

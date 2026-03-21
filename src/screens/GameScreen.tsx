@@ -8,6 +8,8 @@ import { AddRowButton } from '../components/game/AddRowButton';
 import { ScoreEntryModal } from '../components/score-entry/ScoreEntryModal';
 import { DiceRoller } from '../components/dice/DiceRoller';
 import { GameSettingsScreen } from './GameSettingsScreen';
+import { useRoomSync } from '../hooks/useRoomSync';
+import { cn } from '../lib/cn';
 
 interface CellSelection {
   rowId: ID;
@@ -20,6 +22,8 @@ export function GameScreen() {
   const [selectedCell, setSelectedCell] = useState<CellSelection | null>(null);
   const [diceOpen, setDiceOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+
+  const { status: roomStatus, error: roomError, startRoom, leaveRoom } = useRoomSync(game, dispatch);
 
   const handleCellClick = useCallback((rowId: ID, playerId: ID) => {
     setSelectedCell({ rowId, playerId });
@@ -81,6 +85,27 @@ export function GameScreen() {
           <h1 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 truncate flex-1">
             {game.name}
           </h1>
+
+          {/* Room status dot (shown when in a room) */}
+          {game.roomCode && (
+            <button
+              onClick={() => setSettingsOpen(true)}
+              className="flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs font-semibold transition-colors hover:bg-zinc-100 dark:hover:bg-zinc-800"
+              aria-label="Room status"
+            >
+              <span className={cn(
+                'w-2 h-2 rounded-full',
+                roomStatus === 'online'     ? 'bg-green-500' :
+                roomStatus === 'connecting' ? 'bg-yellow-400 animate-pulse' :
+                roomStatus === 'error'      ? 'bg-red-500' :
+                'bg-zinc-400',
+              )} />
+              <span className="text-zinc-500 dark:text-zinc-400 font-mono tracking-wider">
+                {game.roomCode}
+              </span>
+            </button>
+          )}
+
           {/* Settings button */}
           <button
             onClick={() => setSettingsOpen(true)}
@@ -130,7 +155,14 @@ export function GameScreen() {
       />
 
       {/* Settings */}
-      <GameSettingsScreen open={settingsOpen} onClose={() => setSettingsOpen(false)} />
+      <GameSettingsScreen
+        open={settingsOpen}
+        onClose={() => setSettingsOpen(false)}
+        roomStatus={roomStatus}
+        roomError={roomError}
+        onCreateRoom={startRoom}
+        onLeaveRoom={leaveRoom}
+      />
 
       {/* Dice Roller */}
       <DiceRoller

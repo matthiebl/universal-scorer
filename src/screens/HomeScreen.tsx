@@ -46,6 +46,13 @@ export function HomeScreen() {
           <h1 className="text-xl font-bold text-zinc-900 dark:text-zinc-100">Game Scorer</h1>
           <div className="flex items-center gap-1">
           <button
+            onClick={() => navigate('/join')}
+            className="p-2 rounded-lg text-zinc-500 hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-colors text-sm font-medium"
+            aria-label="Join room"
+          >
+            Join
+          </button>
+          <button
             onClick={() => navigate('/presets')}
             className="p-2 rounded-lg text-zinc-500 hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-colors text-sm font-medium"
             aria-label="Presets"
