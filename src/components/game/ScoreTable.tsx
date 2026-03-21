@@ -1,3 +1,4 @@
+import { Fragment } from 'react';
 import type { Game, ID, ScoreRow } from '../../types/game';
 import { computeScore } from '../../lib/scoring';
 import { PlayerHeader } from './PlayerHeader';
@@ -75,7 +76,7 @@ export function ScoreTable({ game, onCellClick }: ScoreTableProps) {
             </tr>
           ) : (
             sections.map((section) => (
-              <>
+              <Fragment key={section.group?.id ?? `ungrouped-${section.children[0]?.id}`}>
                 {/* Group header row */}
                 {section.group && (
                   <tr key={`group-${section.group.id}`} className="bg-zinc-100 dark:bg-zinc-800/70">
@@ -130,7 +131,7 @@ export function ScoreTable({ game, onCellClick }: ScoreTableProps) {
                     })}
                   </tr>
                 )}
-              </>
+              </Fragment>
             ))
           )}
           {game.rows.filter((r) => r.type !== 'group').length > 0 && <TotalsRow game={game} />}
