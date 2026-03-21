@@ -81,9 +81,11 @@ export function ScoreTable({ game, onCellClick }: ScoreTableProps) {
                   <tr key={`group-${section.group.id}`} className="bg-zinc-100 dark:bg-zinc-800/70">
                     <td
                       colSpan={sortedPlayers.length + 1}
-                      className="pl-4 pr-3 py-1.5 text-xs font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 sticky left-0 bg-zinc-100 dark:bg-zinc-800/70"
+                      className="py-1.5 bg-zinc-100 dark:bg-zinc-800/70"
                     >
-                      {section.group.label}
+                      <span className="sticky left-4 inline-block text-xs font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+                        {section.group.label}
+                      </span>
                     </td>
                   </tr>
                 )}
