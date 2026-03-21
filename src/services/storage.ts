@@ -17,14 +17,26 @@ function setGamesMap(map: Record<string, Game>): void {
   localStorage.setItem(GAMES_KEY, JSON.stringify(map));
 }
 
+/** Firebase omits empty objects/arrays, so normalize any game coming out of storage. */
+function normalizeGame(game: Game): Game {
+  return {
+    ...game,
+    scores: game.scores ?? {},
+    players: game.players ?? [],
+    rows: game.rows ?? [],
+    diceHistory: game.diceHistory ?? [],
+  };
+}
+
 export function loadAllGames(): Game[] {
   const map = getGamesMap();
-  return Object.values(map).sort((a, b) => b.updatedAt - a.updatedAt);
+  return Object.values(map).map(normalizeGame).sort((a, b) => b.updatedAt - a.updatedAt);
 }
 
 export function loadGame(id: string): Game | null {
   const map = getGamesMap();
-  return map[id] ?? null;
+  const game = map[id] ?? null;
+  return game ? normalizeGame(game) : null;
 }
 
 export function saveGame(game: Game): void {
