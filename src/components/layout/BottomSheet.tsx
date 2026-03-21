@@ -28,10 +28,14 @@ export function BottomSheet({ open, onClose, title, children }: BottomSheetProps
       <div
         className="absolute inset-0 bg-black/40 backdrop-blur-sm"
         onClick={onClose}
+        aria-hidden="true"
       />
       {/* Sheet */}
       <div
         ref={sheetRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label={title}
         className={cn(
           'relative z-10 w-full max-w-lg rounded-t-2xl bg-white dark:bg-zinc-900 shadow-2xl',
           'animate-slide-up max-h-[85vh] flex flex-col',

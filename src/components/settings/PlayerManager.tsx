@@ -57,7 +57,7 @@ export function PlayerManager({ players, onUpdate, onRemove, onMoveUp, onMoveDow
                 <button
                   onClick={() => onMoveUp(player.id)}
                   disabled={i === 0}
-                  className={cn('p-0.5 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200', i === 0 && 'opacity-20')}
+                  className={cn('p-2 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200', i === 0 && 'opacity-30')}
                   aria-label="Move up"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -67,7 +67,7 @@ export function PlayerManager({ players, onUpdate, onRemove, onMoveUp, onMoveDow
                 <button
                   onClick={() => onMoveDown(player.id)}
                   disabled={i === sorted.length - 1}
-                  className={cn('p-0.5 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200', i === sorted.length - 1 && 'opacity-20')}
+                  className={cn('p-2 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200', i === sorted.length - 1 && 'opacity-30')}
                   aria-label="Move down"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -81,7 +81,7 @@ export function PlayerManager({ players, onUpdate, onRemove, onMoveUp, onMoveDow
 
               <button
                 onClick={() => startEdit(player)}
-                className="p-1.5 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 transition-colors"
+                className="p-2.5 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 transition-colors"
                 aria-label="Edit player"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -90,7 +90,7 @@ export function PlayerManager({ players, onUpdate, onRemove, onMoveUp, onMoveDow
               </button>
               <button
                 onClick={() => onRemove(player.id)}
-                className="p-1.5 text-zinc-400 hover:text-red-500 transition-colors"
+                className="p-2.5 text-zinc-400 hover:text-red-500 transition-colors"
                 aria-label="Remove player"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

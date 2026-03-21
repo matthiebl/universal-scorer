@@ -26,6 +26,7 @@ export const ScoreCell = memo(function ScoreCell({ value, isComputed, playerColo
             ? 'bg-zinc-100/60 dark:bg-zinc-800/60 text-zinc-500 dark:text-zinc-400 cursor-default'
             : 'bg-zinc-50 dark:bg-zinc-900 text-zinc-300 dark:text-zinc-600 border-dashed border-zinc-200 dark:border-zinc-700',
           !isComputed && 'active:scale-95 active:bg-zinc-200 dark:active:bg-zinc-700',
+          'focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 dark:focus:ring-offset-zinc-900',
         )}
         style={hasValue && !isComputed ? { borderColor: playerColor + '40' } : undefined}
       >

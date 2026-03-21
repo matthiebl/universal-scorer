@@ -85,7 +85,7 @@ export function RowManager({ rows, onUpdate, onRemove, onMoveUp, onMoveDown }: R
                 <button
                   onClick={() => onMoveUp(row.id)}
                   disabled={i === 0}
-                  className={cn('p-0.5 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200', i === 0 && 'opacity-20')}
+                  className={cn('p-2 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200', i === 0 && 'opacity-30')}
                   aria-label="Move up"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -95,7 +95,7 @@ export function RowManager({ rows, onUpdate, onRemove, onMoveUp, onMoveDown }: R
                 <button
                   onClick={() => onMoveDown(row.id)}
                   disabled={i === flat.length - 1}
-                  className={cn('p-0.5 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200', i === flat.length - 1 && 'opacity-20')}
+                  className={cn('p-2 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200', i === flat.length - 1 && 'opacity-30')}
                   aria-label="Move down"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -122,7 +122,7 @@ export function RowManager({ rows, onUpdate, onRemove, onMoveUp, onMoveDown }: R
 
               <button
                 onClick={() => { setEditingId(row.id); setEditLabel(row.label); }}
-                className="p-1.5 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 transition-colors shrink-0"
+                className="p-2.5 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 transition-colors shrink-0"
                 aria-label="Rename"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -131,7 +131,7 @@ export function RowManager({ rows, onUpdate, onRemove, onMoveUp, onMoveDown }: R
               </button>
               <button
                 onClick={() => onRemove(row.id)}
-                className="p-1.5 text-zinc-400 hover:text-red-500 transition-colors shrink-0"
+                className="p-2.5 text-zinc-400 hover:text-red-500 transition-colors shrink-0"
                 aria-label="Delete row"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

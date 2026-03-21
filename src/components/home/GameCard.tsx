@@ -20,10 +20,12 @@ function timeAgo(timestamp: number): string {
 
 export function GameCard({ game, onClick, onDelete }: GameCardProps) {
   return (
-    <div
+    <button
+      type="button"
       className={cn(
-        'relative bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800',
+        'relative w-full text-left bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800',
         'p-4 active:bg-zinc-50 dark:active:bg-zinc-800/50 transition-colors cursor-pointer',
+        'focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-zinc-950',
       )}
       onClick={onClick}
     >
@@ -59,7 +61,7 @@ export function GameCard({ game, onClick, onDelete }: GameCardProps) {
             e.stopPropagation();
             onDelete();
           }}
-          className="p-2 -m-2 text-zinc-400 hover:text-red-500 transition-colors"
+          className="p-3 -m-2 text-zinc-400 hover:text-red-500 transition-colors"
           aria-label="Delete game"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -67,6 +69,6 @@ export function GameCard({ game, onClick, onDelete }: GameCardProps) {
           </svg>
         </button>
       </div>
-    </div>
+    </button>
   );
 }
