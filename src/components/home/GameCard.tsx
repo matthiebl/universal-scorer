@@ -20,14 +20,16 @@ function timeAgo(timestamp: number): string {
 
 export function GameCard({ game, onClick, onDelete }: GameCardProps) {
   return (
-    <button
-      type="button"
+    <div
+      role="button"
+      tabIndex={0}
       className={cn(
         'relative w-full text-left bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800',
         'p-4 active:bg-zinc-50 dark:active:bg-zinc-800/50 transition-colors cursor-pointer',
         'focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-zinc-950',
       )}
       onClick={onClick}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick(); } }}
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
@@ -69,6 +71,6 @@ export function GameCard({ game, onClick, onDelete }: GameCardProps) {
           </svg>
         </button>
       </div>
-    </button>
+    </div>
   );
 }
