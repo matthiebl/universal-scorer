@@ -15,6 +15,19 @@ interface ScoreEntryModalProps {
   increments?: number[];
 }
 
+function applyOp(left: number, op: string, right: number): number {
+  let result: number;
+  switch (op) {
+    case '+':  result = left + right; break;
+    case '−':  result = left - right; break;
+    case '×':  result = left * right; break;
+    case '÷':  result = right !== 0 ? left / right : 0; break;
+    default:   return right;
+  }
+  // Avoid floating-point artifacts like 0.1 + 0.2 = 0.30000000000000004
+  return Math.round(result * 1e10) / 1e10;
+}
+
 export function ScoreEntryModal({
   open,
   onClose,
@@ -26,52 +39,109 @@ export function ScoreEntryModal({
   increments,
 }: ScoreEntryModalProps) {
   const [display, setDisplay] = useState('');
+  const [pendingOp, setPendingOp] = useState<string | null>(null);
+  const [leftVal, setLeftVal] = useState<number | null>(null);
+  // True immediately after an operator is pressed — next digit starts a fresh operand
+  const [waitingForOperand, setWaitingForOperand] = useState(false);
 
   useEffect(() => {
     if (open) {
       setDisplay(initialValue != null ? String(initialValue) : '');
+      setPendingOp(null);
+      setLeftVal(null);
+      setWaitingForOperand(false);
     }
   }, [open, initialValue]);
 
   const currentValue = display === '' || display === '-' ? null : Number(display);
 
   const handleDigit = useCallback((digit: string) => {
-    setDisplay((prev) => {
-      if (prev === '0') return digit;
-      return prev + digit;
-    });
-  }, []);
+    if (waitingForOperand) {
+      setDisplay(digit);
+      setWaitingForOperand(false);
+    } else {
+      setDisplay((prev) => (prev === '0' ? digit : prev + digit));
+    }
+  }, [waitingForOperand]);
 
   const handleBackspace = useCallback(() => {
-    setDisplay((prev) => prev.slice(0, -1));
-  }, []);
+    if (waitingForOperand) {
+      // Cancel the pending operator
+      setPendingOp(null);
+      setLeftVal(null);
+      setWaitingForOperand(false);
+    } else {
+      setDisplay((prev) => prev.slice(0, -1));
+    }
+  }, [waitingForOperand]);
 
   const handleNegate = useCallback(() => {
-    setDisplay((prev) => {
-      if (prev.startsWith('-')) return prev.slice(1);
-      if (prev === '' || prev === '0') return '-';
-      return '-' + prev;
-    });
-  }, []);
+    if (waitingForOperand) {
+      setDisplay('-');
+      setWaitingForOperand(false);
+    } else {
+      setDisplay((prev) => {
+        if (prev.startsWith('-')) return prev.slice(1);
+        if (prev === '' || prev === '0') return '-';
+        return '-' + prev;
+      });
+    }
+  }, [waitingForOperand]);
 
   const handleDecimal = useCallback(() => {
+    if (waitingForOperand) {
+      setDisplay('0.');
+      setWaitingForOperand(false);
+      return;
+    }
     setDisplay((prev) => {
       if (prev.includes('.')) return prev;
       if (prev === '' || prev === '-') return prev + '0.';
       return prev + '.';
     });
-  }, []);
+  }, [waitingForOperand]);
+
+  const handleOperator = useCallback((op: string) => {
+    const current = currentValue ?? 0;
+    if (leftVal !== null && pendingOp && !waitingForOperand) {
+      // Chain: evaluate the previous op first
+      const result = applyOp(leftVal, pendingOp, current);
+      setDisplay(String(result));
+      setLeftVal(result);
+    } else {
+      setLeftVal(current);
+    }
+    setPendingOp(op);
+    setWaitingForOperand(true);
+  }, [currentValue, leftVal, pendingOp, waitingForOperand]);
+
+  const handleEquals = useCallback(() => {
+    if (leftVal === null || pendingOp === null) return;
+    const right = currentValue ?? 0;
+    const result = applyOp(leftVal, pendingOp, right);
+    setDisplay(String(result));
+    setLeftVal(null);
+    setPendingOp(null);
+    setWaitingForOperand(false);
+  }, [currentValue, leftVal, pendingOp]);
 
   const handleIncrement = useCallback((amount: number) => {
+    setPendingOp(null);
+    setLeftVal(null);
+    setWaitingForOperand(false);
     setDisplay((prev) => {
       const current = prev === '' || prev === '-' ? 0 : Number(prev);
-      const result = current + amount;
-      return String(result);
+      return String(current + amount);
     });
   }, []);
 
   const handleSave = () => {
-    onSave(currentValue);
+    // If an operation is pending, evaluate it first
+    let value = currentValue;
+    if (leftVal !== null && pendingOp !== null) {
+      value = applyOp(leftVal, pendingOp, currentValue ?? 0);
+    }
+    onSave(value);
     onClose();
   };
 
@@ -79,6 +149,9 @@ export function ScoreEntryModal({
     onSave(null);
     onClose();
   };
+
+  // Display hint: show "5 +" when waiting for the right operand
+  const hint = leftVal !== null && pendingOp ? `${leftVal} ${pendingOp}` : null;
 
   return (
     <BottomSheet open={open} onClose={onClose} title={rowLabel}>
@@ -90,7 +163,10 @@ export function ScoreEntryModal({
         </div>
 
         {/* Display */}
-        <div className="bg-zinc-100 dark:bg-zinc-800 rounded-xl px-4 py-3 text-right">
+        <div className="bg-zinc-100 dark:bg-zinc-800 rounded-xl px-4 py-3 text-right min-h-16 flex flex-col justify-end">
+          {hint && (
+            <span className="text-sm font-mono text-zinc-400 dark:text-zinc-500">{hint}</span>
+          )}
           <span className="text-3xl font-mono font-bold text-zinc-900 dark:text-zinc-100">
             {display || '0'}
           </span>
@@ -105,6 +181,9 @@ export function ScoreEntryModal({
           onBackspace={handleBackspace}
           onNegate={handleNegate}
           onDecimal={handleDecimal}
+          onOperator={handleOperator}
+          onEquals={handleEquals}
+          activeOperator={waitingForOperand ? pendingOp : null}
         />
 
         {/* Actions */}
