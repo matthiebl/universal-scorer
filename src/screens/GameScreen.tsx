@@ -69,7 +69,7 @@ export function GameScreen() {
   const roundCount = game.rows.filter((r) => r.type === 'round').length;
 
   return (
-    <div className="min-h-dvh flex flex-col">
+    <div className="h-dvh flex flex-col">
       {/* Header */}
       <header className="sticky top-0 z-20 bg-zinc-50/80 dark:bg-zinc-950/80 backdrop-blur-lg border-b border-zinc-200 dark:border-zinc-800">
         <div className="max-w-lg mx-auto flex items-center px-4 h-14 gap-3">
@@ -135,8 +135,8 @@ export function GameScreen() {
       </header>
 
       {/* Score Table */}
-      <main className="flex-1 flex flex-col">
-        <div className="max-w-lg mx-auto w-full flex-1 flex flex-col">
+      <main className="flex-1 min-h-0 flex flex-col">
+        <div className="max-w-lg mx-auto w-full flex-1 min-h-0 overflow-auto">
           <ScoreTable game={game} onCellClick={handleCellClick} />
           <AddRowButton
             nextRoundNumber={roundCount + 1}
