@@ -154,11 +154,24 @@ export function gameReducer(state: Game, action: GameAction): Game {
     }
 
     case 'REMOTE_UPDATE': {
-      return action.game;
+      // Firebase omits empty objects/arrays, so normalise missing fields.
+      return {
+        ...action.game,
+        scores: action.game.scores ?? {},
+        players: action.game.players ?? [],
+        rows: action.game.rows ?? [],
+        diceHistory: action.game.diceHistory ?? [],
+      };
     }
 
     case 'LOAD_GAME': {
-      return action.game;
+      return {
+        ...action.game,
+        scores: action.game.scores ?? {},
+        players: action.game.players ?? [],
+        rows: action.game.rows ?? [],
+        diceHistory: action.game.diceHistory ?? [],
+      };
     }
 
     default:
