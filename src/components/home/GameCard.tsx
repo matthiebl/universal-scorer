@@ -1,5 +1,12 @@
 import type { Game } from '../../types/game';
+import { loadSavedPresets } from '../../services/storage';
 import { cn } from '../../lib/cn';
+
+function resolvePresetName(presetId?: string): string | null {
+  if (!presetId) return null;
+  const saved = loadSavedPresets().find((p) => p.id === presetId);
+  return saved?.name ?? null;
+}
 
 interface GameCardProps {
   game: Game;
@@ -19,6 +26,8 @@ function timeAgo(timestamp: number): string {
 }
 
 export function GameCard({ game, onClick, onDelete }: GameCardProps) {
+  const presetName = resolvePresetName(game.presetId);
+
   return (
     <div
       role="button"
@@ -56,6 +65,7 @@ export function GameCard({ game, onClick, onDelete }: GameCardProps) {
           </div>
           <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-1.5">
             {game.status === 'completed' ? 'Completed' : 'Active'} &middot; {timeAgo(game.updatedAt)}
+            {presetName && <> &middot; {presetName}</>}
           </p>
         </div>
         <button

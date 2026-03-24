@@ -6,7 +6,7 @@ import { Input } from '../shared/Input';
 import { Button } from '../shared/Button';
 import { PlayerSetup } from './PlayerSetup';
 import { PresetPicker } from './PresetPicker';
-import { loadSavedPresets } from '../../services/storage';
+import { loadSavedPresets, savePreset } from '../../services/storage';
 
 interface NewGameDialogProps {
   open: boolean;
@@ -22,7 +22,25 @@ export function NewGameDialog({ open, onClose, onCreate }: NewGameDialogProps) {
 
   const handleCreate = () => {
     const gameName = name.trim() || 'New Game';
-    onCreate(gameName, players, selectedPreset);
+    let preset = selectedPreset;
+
+    // If a community preset was selected (not already saved), copy it locally
+    if (preset && !preset.isBuiltIn) {
+      const savedIds = new Set(savedPresets.map((p) => p.id));
+      if (!savedIds.has(preset.id)) {
+        const localCopy: Preset = {
+          ...preset,
+          id: crypto.randomUUID(),
+          isBuiltIn: false,
+          isPublic: false,
+          createdAt: Date.now(),
+        };
+        savePreset(localCopy);
+        preset = localCopy;
+      }
+    }
+
+    onCreate(gameName, players, preset);
     setName('');
     setPlayers([]);
     setSelectedPreset(null);
@@ -44,7 +62,12 @@ export function NewGameDialog({ open, onClose, onCreate }: NewGameDialogProps) {
         <PresetPicker
           savedPresets={savedPresets}
           selected={selectedPreset}
-          onSelect={setSelectedPreset}
+          onSelect={(preset) => {
+            setSelectedPreset(preset);
+            if (preset && !name.trim()) {
+              setName(preset.name);
+            }
+          }}
         />
 
         <PlayerSetup players={players} onChange={setPlayers} />

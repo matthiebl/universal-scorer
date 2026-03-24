@@ -1,29 +1,47 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import type { Preset } from '../types/preset';
-import { BUILT_IN_PRESETS } from '../presets';
 import { loadSavedPresets, savePreset, deletePreset } from '../services/storage';
-import { publishPreset, unpublishPreset, loadCommunityPresets } from '../services/presetService';
+import { submitPreset, withdrawPreset, loadCommunityPresets, fetchSubmittedPresetStatuses } from '../services/presetService';
 import { PresetEditSheet } from '../components/presets/PresetEditSheet';
+import { Modal } from '../components/layout/Modal';
+import { Button } from '../components/shared/Button';
 import { cn } from '../lib/cn';
 
 type Tab = 'mine' | 'community';
+
+// ---------- Tag helpers ----------
+
+type PresetTag = 'custom' | 'submitted' | 'approved' | 'community';
+
+function getPresetTag(preset: Preset, context: 'mine' | 'community'): PresetTag {
+  if (context === 'community') return 'community';
+  if (preset.approvedAt) return 'approved';
+  if (preset.submittedAt) return 'submitted';
+  return 'custom';
+}
+
+const tagStyles: Record<PresetTag, { label: string; className: string }> = {
+  custom: { label: 'Custom', className: 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400' },
+  submitted: { label: 'Pending Review', className: 'bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400' },
+  approved: { label: 'Published', className: 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400' },
+  community: { label: 'Community', className: 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400' },
+};
 
 // ---------- PresetCard ----------
 
 interface PresetCardProps {
   preset: Preset;
+  tag?: PresetTag;
   onEdit?: () => void;
+  onCopy?: () => void;
   onDelete?: () => void;
-  onPublish?: () => void;
-  onUnpublish?: () => void;
-  onUse?: () => void;
-  publishing?: boolean;
+  onSubmit?: () => void;
+  onWithdraw?: () => void;
+  submitting?: boolean;
 }
 
-function PresetCard({ preset, onEdit, onDelete, onPublish, onUnpublish, onUse, publishing }: PresetCardProps) {
-  const isPublished = (preset as Preset & { publishedAt?: number }).publishedAt != null;
-
+function PresetCard({ preset, tag, onEdit, onCopy, onDelete, onSubmit, onWithdraw, submitting }: PresetCardProps) {
   return (
     <div className={cn(
       'rounded-xl border p-4 space-y-2',
@@ -31,19 +49,13 @@ function PresetCard({ preset, onEdit, onDelete, onPublish, onUnpublish, onUse, p
         ? 'border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900'
         : 'border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/20',
     )}>
-      {/* Header row */}
       <div className="flex items-start justify-between gap-2">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{preset.name}</p>
-            {preset.isBuiltIn && (
-              <span className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-zinc-200 dark:bg-zinc-700 text-zinc-500 dark:text-zinc-400">
-                Built-in
-              </span>
-            )}
-            {isPublished && (
-              <span className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400">
-                Published
+            {tag && (
+              <span className={cn('text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded', tagStyles[tag].className)}>
+                {tagStyles[tag].label}
               </span>
             )}
           </div>
@@ -57,14 +69,13 @@ function PresetCard({ preset, onEdit, onDelete, onPublish, onUnpublish, onUse, p
           </p>
         </div>
 
-        {/* Action buttons */}
         <div className="flex items-center gap-0.5 shrink-0">
-          {onUse && (
+          {onCopy && (
             <button
-              onClick={onUse}
+              onClick={onCopy}
               className="px-3 py-1.5 rounded-lg bg-blue-600 text-white text-xs font-semibold"
             >
-              Use
+              Copy
             </button>
           )}
           {onEdit && (
@@ -74,15 +85,15 @@ function PresetCard({ preset, onEdit, onDelete, onPublish, onUnpublish, onUse, p
               </svg>
             </button>
           )}
-          {onPublish && !isPublished && (
-            <button onClick={onPublish} disabled={publishing} className="p-1.5 text-zinc-400 hover:text-blue-500 transition-colors disabled:opacity-40" aria-label="Publish preset">
+          {onSubmit && (
+            <button onClick={onSubmit} disabled={submitting} className="p-1.5 text-zinc-400 hover:text-blue-500 transition-colors disabled:opacity-40" aria-label="Submit to community">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
               </svg>
             </button>
           )}
-          {onUnpublish && isPublished && (
-            <button onClick={onUnpublish} disabled={publishing} className="p-1.5 text-green-500 hover:text-zinc-400 transition-colors disabled:opacity-40" aria-label="Unpublish preset">
+          {onWithdraw && (
+            <button onClick={onWithdraw} disabled={submitting} className="p-1.5 text-amber-500 hover:text-zinc-400 transition-colors disabled:opacity-40" aria-label="Withdraw submission">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
               </svg>
@@ -110,10 +121,34 @@ export function PresetsScreen() {
   const [communityPresets, setCommunityPresets] = useState<Preset[] | null>(null);
   const [communityLoading, setCommunityLoading] = useState(false);
   const [communityError, setCommunityError] = useState<string | null>(null);
-  const [publishing, setPublishing] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState<string | null>(null);
   const [editingPreset, setEditingPreset] = useState<Preset | null>(null);
+  const [creating, setCreating] = useState(false);
+  const [confirmSubmitPreset, setConfirmSubmitPreset] = useState<Preset | null>(null);
 
   const refreshSaved = () => setSavedPresets(loadSavedPresets());
+
+  // On mount, sync approval status for any submitted presets from Firestore.
+  useEffect(() => {
+    const submitted = loadSavedPresets().filter((p) => p.submittedAt != null);
+    if (submitted.length === 0) return;
+    let cancelled = false;
+    fetchSubmittedPresetStatuses(submitted.map((p) => p.id)).then((statuses) => {
+      if (cancelled) return;
+      let changed = false;
+      for (const status of statuses) {
+        if (!status.id || !status.approvedAt) continue;
+        const local = submitted.find((p) => p.id === status.id);
+        if (local && !local.approvedAt) {
+          savePreset({ ...local, approvedAt: status.approvedAt });
+          changed = true;
+        }
+      }
+      if (changed) refreshSaved();
+    }).catch(() => {});
+    return () => { cancelled = true; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleDelete = (id: string) => {
     deletePreset(id);
@@ -125,31 +160,59 @@ export function PresetsScreen() {
     refreshSaved();
   };
 
-  const handlePublish = async (preset: Preset) => {
-    setPublishing(preset.id);
-    try {
-      const withTimestamp = { ...preset, publishedAt: Date.now() };
-      await publishPreset(withTimestamp);
-      savePreset(withTimestamp);
-      refreshSaved();
-    } catch {
-      // silently ignore — user will see no "Published" badge
-    } finally {
-      setPublishing(null);
-    }
+  const handleCreate = (newPreset: Preset) => {
+    savePreset(newPreset);
+    refreshSaved();
   };
 
-  const handleUnpublish = async (preset: Preset) => {
-    setPublishing(preset.id);
+  const handleCopy = (preset: Preset) => {
+    const local: Preset = {
+      ...preset,
+      id: crypto.randomUUID(),
+      isBuiltIn: false,
+      isPublic: false,
+      submittedAt: undefined,
+      approvedAt: undefined,
+      publishedAt: undefined,
+      createdAt: Date.now(),
+    };
+    savePreset(local);
+    setSavedPresets(loadSavedPresets());
+    setTab('mine');
+  };
+
+  const handleSubmit = async (preset: Preset) => {
+    setSubmitting(preset.id);
     try {
-      await unpublishPreset(preset.id);
-      const { publishedAt: _, ...withoutTimestamp } = preset as Preset & { publishedAt?: number };
-      savePreset(withoutTimestamp);
+      const submitted: Preset = { ...preset, submittedAt: Date.now(), isPublic: true };
+      await submitPreset(submitted);
+      savePreset(submitted);
       refreshSaved();
     } catch {
       // silently ignore
     } finally {
-      setPublishing(null);
+      setSubmitting(null);
+      setConfirmSubmitPreset(null);
+    }
+  };
+
+  const handleWithdraw = async (preset: Preset) => {
+    setSubmitting(preset.id);
+    try {
+      await withdrawPreset(preset.id);
+      const withdrawn: Preset = {
+        ...preset,
+        submittedAt: undefined,
+        approvedAt: undefined,
+        publishedAt: undefined,
+        isPublic: false,
+      };
+      savePreset(withdrawn);
+      refreshSaved();
+    } catch {
+      // silently ignore
+    } finally {
+      setSubmitting(null);
     }
   };
 
@@ -172,12 +235,10 @@ export function PresetsScreen() {
     if (t === 'community' && communityPresets === null) loadCommunity();
   };
 
-  const handleUse = (preset: Preset) => {
-    const local: Preset = { ...preset, id: crypto.randomUUID(), isBuiltIn: false, isPublic: false, createdAt: Date.now() };
-    savePreset(local);
-    setSavedPresets(loadSavedPresets());
-    setTab('mine');
-  };
+  /** Preset is locked for editing once submitted (pending or approved). */
+  const isLocked = (p: Preset) => p.submittedAt != null;
+  /** Preset can be withdrawn only while pending review (submitted but not yet approved). */
+  const canWithdraw = (p: Preset) => p.submittedAt != null && p.approvedAt == null;
 
   return (
     <>
@@ -218,38 +279,44 @@ export function PresetsScreen() {
 
           {/* Mine tab */}
           {tab === 'mine' && (
-            <div className="space-y-6">
-              <div>
-                <h2 className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 mb-3">Built-in</h2>
-                <div className="space-y-2">
-                  {BUILT_IN_PRESETS.map((preset) => (
-                    <PresetCard key={preset.id} preset={preset} />
-                  ))}
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                  <h2 className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Saved</h2>
+                  <button
+                    onClick={() => setCreating(true)}
+                    className="flex items-center gap-1 text-xs text-blue-500 font-semibold hover:text-blue-600 transition-colors"
+                  >
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                    </svg>
+                    Create Preset
+                  </button>
                 </div>
-              </div>
-
-              <div>
-                <h2 className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 mb-3">Saved</h2>
                 {savedPresets.length === 0 ? (
                   <p className="text-sm text-zinc-400 dark:text-zinc-500 text-center py-4">
-                    No saved presets yet. Save a game's rows as a preset from game settings.
+                    No saved presets yet. Create one or save a game's rows as a preset from game settings.
                   </p>
                 ) : (
                   <div className="space-y-2">
-                    {savedPresets.map((preset) => (
-                      <PresetCard
-                        key={preset.id}
-                        preset={preset}
-                        onEdit={() => setEditingPreset(preset)}
-                        onDelete={() => handleDelete(preset.id)}
-                        onPublish={() => handlePublish(preset)}
-                        onUnpublish={() => handleUnpublish(preset)}
-                        publishing={publishing === preset.id}
-                      />
-                    ))}
+                    {savedPresets.map((preset) => {
+                      const locked = isLocked(preset);
+                      const tag = getPresetTag(preset, 'mine');
+                      return (
+                        <PresetCard
+                          key={preset.id}
+                          preset={preset}
+                          tag={tag}
+                          onEdit={!locked ? () => setEditingPreset(preset) : undefined}
+                          onCopy={locked ? () => handleCopy(preset) : undefined}
+                          onDelete={() => handleDelete(preset.id)}
+                          onSubmit={!locked ? () => setConfirmSubmitPreset(preset) : undefined}
+                          onWithdraw={canWithdraw(preset) ? () => handleWithdraw(preset) : undefined}
+                          submitting={submitting === preset.id}
+                        />
+                      );
+                    })}
                   </div>
                 )}
-              </div>
             </div>
           )}
 
@@ -257,7 +324,7 @@ export function PresetsScreen() {
           {tab === 'community' && (
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <p className="text-xs text-zinc-500 dark:text-zinc-400">Browse presets shared by others. Tap Use to copy to your saved presets.</p>
+                <p className="text-xs text-zinc-500 dark:text-zinc-400">Browse presets shared by others.</p>
                 <button onClick={loadCommunity} className="text-xs text-blue-500 font-medium shrink-0 ml-2">Refresh</button>
               </div>
 
@@ -271,7 +338,7 @@ export function PresetsScreen() {
 
               {communityPresets !== null && !communityLoading && communityPresets.length === 0 && (
                 <p className="text-sm text-zinc-400 dark:text-zinc-500 text-center py-8">
-                  No community presets yet. Be the first to publish one!
+                  No community presets yet. Be the first to submit one!
                 </p>
               )}
 
@@ -281,7 +348,8 @@ export function PresetsScreen() {
                     <PresetCard
                       key={preset.id}
                       preset={{ ...preset, isBuiltIn: false }}
-                      onUse={() => handleUse(preset)}
+                      tag="community"
+                      onCopy={() => handleCopy(preset)}
                     />
                   ))}
                 </div>
@@ -299,6 +367,47 @@ export function PresetsScreen() {
           onClose={() => setEditingPreset(null)}
           onSave={handleEdit}
         />
+      )}
+
+      {/* Create sheet */}
+      <PresetEditSheet
+        open={creating}
+        onClose={() => setCreating(false)}
+        onSave={handleCreate}
+      />
+
+      {/* Submit confirmation modal */}
+      {confirmSubmitPreset && (
+        <Modal
+          open={confirmSubmitPreset !== null}
+          onClose={() => setConfirmSubmitPreset(null)}
+          title="Submit to Community"
+        >
+          <div className="space-y-4">
+            <p className="text-sm text-zinc-600 dark:text-zinc-400">
+              You're about to submit <strong>"{confirmSubmitPreset.name}"</strong> for community review.
+            </p>
+            <div className="rounded-lg bg-zinc-100 dark:bg-zinc-800 p-3 space-y-2 text-xs text-zinc-500 dark:text-zinc-400">
+              <p>Once submitted:</p>
+              <ul className="list-disc pl-4 space-y-1">
+                <li>Your preset will be reviewed before appearing in the community library</li>
+                <li>You won't be able to edit the preset while it's submitted</li>
+                <li>You can withdraw the submission at any time</li>
+                <li>You can make a copy if you want to continue editing a version locally</li>
+              </ul>
+            </div>
+            <div className="flex gap-3 pt-1">
+              <Button variant="ghost" onClick={() => setConfirmSubmitPreset(null)} className="flex-1">Cancel</Button>
+              <Button
+                onClick={() => handleSubmit(confirmSubmitPreset)}
+                disabled={submitting === confirmSubmitPreset.id}
+                className="flex-1"
+              >
+                {submitting === confirmSubmitPreset.id ? 'Submitting…' : 'Submit'}
+              </Button>
+            </div>
+          </div>
+        </Modal>
       )}
     </>
   );

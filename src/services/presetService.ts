@@ -1,6 +1,7 @@
 import {
   collection,
   doc,
+  getDoc,
   setDoc,
   deleteDoc,
   getDocs,
@@ -12,28 +13,48 @@ import type { Preset } from '../types/preset';
 
 const PRESETS_COL = 'ScorerPresets';
 
-/** Publish a preset to Firestore so others can browse and use it. */
-export async function publishPreset(preset: Preset): Promise<void> {
-  await setDoc(doc(firestore, PRESETS_COL, preset.id), {
+/** Submit a preset for community review. Stores in Firestore with submittedAt. */
+export async function submitPreset(preset: Preset): Promise<void> {
+  console.log("submit")
+  const res = await setDoc(doc(firestore, PRESETS_COL, preset.id), {
     ...preset,
     isPublic: true,
-    publishedAt: Date.now(),
+    submittedAt: Date.now(),
   });
+  console.log(res)
 }
 
-/** Remove a preset from Firestore. */
-export async function unpublishPreset(id: string): Promise<void> {
+/** Withdraw a submitted preset from Firestore. */
+export async function withdrawPreset(id: string): Promise<void> {
   await deleteDoc(doc(firestore, PRESETS_COL, id));
 }
 
-/** Fetch all public presets from Firestore. */
+/**
+ * Fetch approved community presets from Firestore.
+ * Only presets that have been manually approved (approvedAt set) are returned.
+ */
 export async function loadCommunityPresets(): Promise<Preset[]> {
   const q = query(
     collection(firestore, PRESETS_COL),
     where('isPublic', '==', true),
   );
   const snap = await getDocs(q);
-  const presets = snap.docs.map((d) => d.data() as Preset);
-  // Sort client-side to avoid needing a Firestore composite index.
-  return presets.sort((a, b) => ((b as Preset & { publishedAt?: number }).publishedAt ?? 0) - ((a as Preset & { publishedAt?: number }).publishedAt ?? 0));
+  const presets = snap.docs
+    .map((d) => d.data() as Preset)
+    .filter((p) => p.approvedAt != null);
+  return presets.sort((a, b) => (b.approvedAt ?? 0) - (a.approvedAt ?? 0));
 }
+
+/**
+ * Fetch the current Firestore state of submitted presets by their IDs.
+ * Returns only the ones that exist in Firestore (i.e. still submitted/approved).
+ */
+export async function fetchSubmittedPresetStatuses(ids: string[]): Promise<Partial<Preset>[]> {
+  if (ids.length === 0) return [];
+  const snaps = await Promise.all(ids.map((id) => getDoc(doc(firestore, PRESETS_COL, id))));
+  return snaps.filter((s) => s.exists()).map((s) => s.data() as Partial<Preset>);
+}
+
+// Legacy exports for backward compatibility
+export const publishPreset = submitPreset;
+export const unpublishPreset = withdrawPreset;
