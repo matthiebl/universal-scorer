@@ -18,4 +18,17 @@ export function diceLabel(count: number, sides: number): string {
   return `${count}d${sides}`;
 }
 
-export const COMMON_DICE = [4, 6, 8, 10, 12, 20, 100] as const;
+export const COMMON_DICE = [2, 4, 6, 8, 10, 12, 20, 100] as const;
+
+const CUSTOM_DIE_KEY = 'game-scorer:custom-die';
+
+export function loadCustomDie(): number | null {
+  const val = localStorage.getItem(CUSTOM_DIE_KEY);
+  if (!val) return null;
+  const n = parseInt(val, 10);
+  return Number.isFinite(n) && n >= 2 ? n : null;
+}
+
+export function saveCustomDie(sides: number): void {
+  localStorage.setItem(CUSTOM_DIE_KEY, String(sides));
+}

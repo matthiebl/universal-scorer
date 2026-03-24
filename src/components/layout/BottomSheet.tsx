@@ -1,4 +1,5 @@
 import { useEffect, useRef, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import { cn } from '../../lib/cn';
 
 interface BottomSheetProps {
@@ -22,7 +23,7 @@ export function BottomSheet({ open, onClose, title, children }: BottomSheetProps
 
   if (!open) return null;
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-50 flex items-end justify-center">
       {/* Backdrop */}
       <div
@@ -41,19 +42,32 @@ export function BottomSheet({ open, onClose, title, children }: BottomSheetProps
           'animate-slide-up max-h-[85vh] flex flex-col',
         )}
       >
-        {/* Handle */}
-        <div className="flex justify-center pt-3 pb-1">
-          <div className="w-10 h-1 rounded-full bg-zinc-300 dark:bg-zinc-600" />
-        </div>
-        {title && (
-          <div className="px-4 pb-2 border-b border-zinc-200 dark:border-zinc-700">
+        {/* Header */}
+        <div className={cn(
+          'flex items-center justify-between px-4 pt-4 pb-3',
+          title && 'border-b border-zinc-200 dark:border-zinc-700',
+        )}>
+          {title ? (
             <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">{title}</h2>
-          </div>
-        )}
+          ) : (
+            <div />
+          )}
+          <button
+            type="button"
+            onClick={onClose}
+            className="p-1 rounded-lg text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+            aria-label="Close"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
         <div className="overflow-y-auto p-4">
           {children}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

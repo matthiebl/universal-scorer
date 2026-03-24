@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
-import type { Player, Game } from '../types/game';
+import type { Player, Game, DiceRoll } from '../types/game';
 import type { Preset } from '../types/preset';
 import { createEmptyGame } from '../state/gameReducer';
 import { useGameList } from '../state/useGameList';
@@ -8,13 +8,27 @@ import { saveGame } from '../services/storage';
 import { Button } from '../components/shared/Button';
 import { GameCard } from '../components/home/GameCard';
 import { NewGameDialog } from '../components/home/NewGameDialog';
+import { DiceRoller } from '../components/dice/DiceRoller';
 import { useTheme } from '../hooks/useTheme';
 
 export function HomeScreen() {
   const { games, refresh, deleteGame } = useGameList();
   const [showNewGame, setShowNewGame] = useState(false);
+  const [diceOpen, setDiceOpen] = useState(false);
+  const [diceHistory, setDiceHistory] = useState<DiceRoll[]>([]);
   const navigate = useNavigate();
   const { theme, toggleTheme } = useTheme();
+
+  const handleDiceRoll = (dice: { sides: number; result: number }[], total: number, label: string) => {
+    const roll: DiceRoll = {
+      id: crypto.randomUUID(),
+      dice,
+      total,
+      timestamp: Date.now(),
+      label,
+    };
+    setDiceHistory((prev) => [roll, ...prev].slice(0, 20));
+  };
 
   const handleCreate = (name: string, players: Omit<Player, 'id' | 'order'>[], preset: Preset | null) => {
     const game: Game = {
@@ -90,9 +104,24 @@ export function HomeScreen() {
             </div>
             <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 mb-1">No games yet</h2>
             <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-6">Create your first game to start tracking scores</p>
-            <Button onClick={() => setShowNewGame(true)} size="lg">
-              New Game
-            </Button>
+            <div className="flex items-center gap-3">
+              <Button onClick={() => setShowNewGame(true)} size="lg">
+                New Game
+              </Button>
+              <button
+                onClick={() => setDiceOpen(true)}
+                className="w-12 h-12 rounded-full shadow-lg bg-zinc-700 dark:bg-zinc-600 text-white flex items-center justify-center hover:bg-zinc-800 dark:hover:bg-zinc-500 active:scale-95 transition-all"
+                aria-label="Dice roller"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <rect x="3" y="3" width="18" height="18" rx="3" strokeWidth={2} />
+                  <circle cx="8.5" cy="8.5" r="1" fill="currentColor" stroke="none" />
+                  <circle cx="15.5" cy="8.5" r="1" fill="currentColor" stroke="none" />
+                  <circle cx="8.5" cy="15.5" r="1" fill="currentColor" stroke="none" />
+                  <circle cx="15.5" cy="15.5" r="1" fill="currentColor" stroke="none" />
+                </svg>
+              </button>
+            </div>
           </div>
         ) : (
           <div className="space-y-3">
@@ -108,9 +137,22 @@ export function HomeScreen() {
         )}
       </main>
 
-      {/* FAB */}
+      {/* FABs */}
       {games.length > 0 && (
-        <div className="fixed bottom-6 right-6 max-w-lg">
+        <div className="fixed bottom-6 right-6 max-w-lg flex items-center gap-3">
+          <button
+            onClick={() => setDiceOpen(true)}
+            className="w-12 h-12 rounded-full shadow-lg bg-zinc-700 dark:bg-zinc-600 text-white flex items-center justify-center hover:bg-zinc-800 dark:hover:bg-zinc-500 active:scale-95 transition-all"
+            aria-label="Dice roller"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <rect x="3" y="3" width="18" height="18" rx="3" strokeWidth={2} />
+              <circle cx="8.5" cy="8.5" r="1" fill="currentColor" stroke="none" />
+              <circle cx="15.5" cy="8.5" r="1" fill="currentColor" stroke="none" />
+              <circle cx="8.5" cy="15.5" r="1" fill="currentColor" stroke="none" />
+              <circle cx="15.5" cy="15.5" r="1" fill="currentColor" stroke="none" />
+            </svg>
+          </button>
           <Button
             onClick={() => setShowNewGame(true)}
             size="lg"
@@ -130,6 +172,13 @@ export function HomeScreen() {
         open={showNewGame}
         onClose={() => setShowNewGame(false)}
         onCreate={handleCreate}
+      />
+
+      <DiceRoller
+        open={diceOpen}
+        onClose={() => setDiceOpen(false)}
+        onRoll={handleDiceRoll}
+        history={diceHistory}
       />
     </div>
   );
