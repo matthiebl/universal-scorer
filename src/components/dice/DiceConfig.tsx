@@ -16,7 +16,7 @@ export function DiceConfig({ count, sides, onCountChange, onSidesChange }: DiceC
   const [customOpen, setCustomOpen] = useState(false);
   const [customInput, setCustomInput] = useState('');
   const savedCustom = loadCustomDie();
-  const isCustom = !(COMMON_DICE as readonly number[]).includes(sides) && sides !== savedCustom;
+  const isCustom = !(COMMON_DICE as readonly number[]).includes(sides) && sides !== savedCustom && sides !== -1;
 
   const handleCustomSubmit = () => {
     const val = parseInt(customInput, 10);
@@ -65,42 +65,74 @@ export function DiceConfig({ count, sides, onCountChange, onSidesChange }: DiceC
                 d{s}
               </button>
             ))}
-            {/* Saved custom die */}
-            {savedCustom ? (
-              <button
-                type="button"
-                onClick={() => onSidesChange(savedCustom)}
-                className={cn(
-                  'py-2.5 rounded-xl text-sm font-bold transition-all',
-                  sides === savedCustom
-                    ? 'bg-blue-600 text-white shadow-md scale-105'
-                    : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700',
-                )}
-              >
-                d{savedCustom}
-              </button>
+            {import.meta.env.VITE_ENABLE_PRANKS === 'true' ? (
+              <>
+                {/* 9th: dR — always fixed, never replaced by custom die */}
+                <button
+                  type="button"
+                  onClick={() => onSidesChange(-1)}
+                  className={cn(
+                    'py-2.5 rounded-xl text-sm font-bold transition-all border-2 border-dashed',
+                    sides === -1
+                      ? 'border-blue-500 bg-blue-600 text-white shadow-md scale-105'
+                      : 'border-zinc-300 dark:border-zinc-600 text-zinc-400 dark:text-zinc-500 hover:border-zinc-400 dark:hover:border-zinc-500',
+                  )}
+                >
+                  dR
+                </button>
+                {/* 10th: opens numpad (pre-filled if saved custom exists) */}
+                <button
+                  type="button"
+                  onClick={() => { setCustomInput(savedCustom ? String(savedCustom) : isCustom ? String(sides) : ''); setCustomOpen(true); }}
+                  className={cn(
+                    'py-2.5 rounded-xl text-sm font-bold transition-all',
+                    isCustom
+                      ? 'bg-blue-600 text-white shadow-md scale-105'
+                      : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700',
+                  )}
+                >
+                  {isCustom ? `d${sides}` : savedCustom ? `d${savedCustom}` : 'dN'}
+                </button>
+              </>
             ) : (
-              <button
-                type="button"
-                onClick={() => { setCustomInput(''); setCustomOpen(true); }}
-                className="py-2.5 rounded-xl text-sm font-bold transition-all border-2 border-dashed border-zinc-300 dark:border-zinc-600 text-zinc-400 dark:text-zinc-500 hover:border-zinc-400 dark:hover:border-zinc-500"
-              >
-                dN
-              </button>
+              <>
+                {/* Original layout: 9th = saved custom or dashed empty, 10th = dN opener */}
+                {savedCustom ? (
+                  <button
+                    type="button"
+                    onClick={() => onSidesChange(savedCustom)}
+                    className={cn(
+                      'py-2.5 rounded-xl text-sm font-bold transition-all',
+                      sides === savedCustom
+                        ? 'bg-blue-600 text-white shadow-md scale-105'
+                        : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700',
+                    )}
+                  >
+                    d{savedCustom}
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => { setCustomInput(''); setCustomOpen(true); }}
+                    className="py-2.5 rounded-xl text-sm font-bold transition-all border-2 border-dashed border-zinc-300 dark:border-zinc-600 text-zinc-400 dark:text-zinc-500 hover:border-zinc-400 dark:hover:border-zinc-500"
+                  >
+                    dN
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => { setCustomInput(isCustom ? String(sides) : ''); setCustomOpen(true); }}
+                  className={cn(
+                    'py-2.5 rounded-xl text-sm font-bold transition-all',
+                    isCustom
+                      ? 'bg-blue-600 text-white shadow-md scale-105'
+                      : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700',
+                  )}
+                >
+                  {isCustom ? `d${sides}` : 'dN'}
+                </button>
+              </>
             )}
-            {/* Custom dN button */}
-            <button
-              type="button"
-              onClick={() => { setCustomInput(isCustom ? String(sides) : ''); setCustomOpen(true); }}
-              className={cn(
-                'py-2.5 rounded-xl text-sm font-bold transition-all',
-                isCustom
-                  ? 'bg-blue-600 text-white shadow-md scale-105'
-                  : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700',
-              )}
-            >
-              {isCustom ? `d${sides}` : 'dN'}
-            </button>
           </div>
         </div>
 

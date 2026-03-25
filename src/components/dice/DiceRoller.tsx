@@ -21,6 +21,13 @@ export function DiceRoller({ open, onClose, onRoll, history }: DiceRollerProps) 
 
   const handleRoll = useCallback(() => {
     if (rolling) return;
+    if (sides === -1 && import.meta.env.VITE_ENABLE_PRANKS === 'true') {
+      window.location.href = 'youtube://www.youtube.com/watch?v=dQw4w9WgXcQ';
+      setTimeout(() => {
+        window.location.href = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ';
+      }, 150);
+      return;
+    }
     setRolling(true);
     setLastResult(null);
 
@@ -51,7 +58,7 @@ export function DiceRoller({ open, onClose, onRoll, history }: DiceRollerProps) 
           disabled={rolling}
           className="w-full py-4 rounded-2xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white text-xl font-bold transition-all active:scale-95 disabled:opacity-60"
         >
-          {rolling ? 'Rolling…' : `Roll ${count}d${sides}`}
+          {rolling ? 'Rolling…' : sides === -1 ? 'Roll dR' : `Roll ${count}d${sides}`}
         </button>
 
         {lastResult && (

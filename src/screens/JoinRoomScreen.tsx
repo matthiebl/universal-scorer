@@ -16,6 +16,13 @@ export function JoinRoomScreen() {
 
   const handleJoin = async () => {
     if (!canJoin || loading) return;
+    if (normalized.startsWith('R') && import.meta.env.VITE_ENABLE_PRANKS === 'true') {
+      window.location.href = 'youtube://www.youtube.com/watch?v=dQw4w9WgXcQ';
+      setTimeout(() => {
+        window.location.href = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ';
+      }, 150);
+      return;
+    }
     setLoading(true);
     setError(null);
     try {
