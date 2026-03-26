@@ -37,6 +37,13 @@ export async function joinRoom(code: string): Promise<Game | null> {
   return (snap.val() as Room).game;
 }
 
+/** Fetch the current game snapshot from a room without subscribing. */
+export async function fetchRoomGame(code: string): Promise<Game | null> {
+  const snap = await get(roomRef(code));
+  if (!snap.exists()) return null;
+  return (snap.val() as Room).game;
+}
+
 /** Push a local game state update to the room. */
 export async function pushGameUpdate(code: string, game: Game): Promise<void> {
   // Firebase rejects undefined values — JSON round-trip strips them cleanly

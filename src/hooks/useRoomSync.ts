@@ -1,7 +1,7 @@
 import { useEffect, useRef, useCallback, useState } from 'react';
-import type { Game } from '../types/game';
+import type { Game, ScoreEntry } from '../types/game';
 import type { GameAction } from '../state/gameActions';
-import { createRoom, joinRoom, pushGameUpdate, subscribeToRoom } from '../services/roomSync';
+import { createRoom, joinRoom, fetchRoomGame, pushGameUpdate, subscribeToRoom } from '../services/roomSync';
 
 export type RoomStatus = 'offline' | 'connecting' | 'online' | 'error';
 
@@ -13,11 +13,25 @@ interface UseRoomSyncResult {
   leaveRoom: () => void;
 }
 
+function scoresDiffer(
+  a: Record<string, ScoreEntry>,
+  b: Record<string, ScoreEntry>,
+): boolean {
+  const aKeys = Object.keys(a);
+  const bKeys = Object.keys(b);
+  if (aKeys.length !== bKeys.length) return true;
+  return aKeys.some(
+    (k) => !b[k] || a[k].value !== b[k].value || a[k].timestamp !== b[k].timestamp,
+  );
+}
+
 /**
  * Syncs a game with a Firebase Realtime Database room.
  *
  * - Subscribes to Firebase for remote changes (onValue).
  * - Pushes every local change to Firebase (debounced 400ms).
+ * - After each successful push, polls Firebase once after a random 1–5s delay
+ *   to reconcile any concurrent edits missed by the subscription.
  * - Uses fromRemoteRef to skip pushing updates that came from Firebase
  *   (prevents echo loops without relying on timestamp comparisons).
  */
@@ -29,6 +43,9 @@ export function useRoomSync(
   const [error, setError] = useState<string | null>(null);
 
   const roomCodeRef = useRef<string | null>(game.roomCode ?? null);
+  // Always-current game state — read by poll callback without stale closures.
+  const gameRef = useRef(game);
+  gameRef.current = game;
   // Set to true immediately before dispatching a REMOTE_UPDATE so the push
   // effect knows not to echo it back to Firebase.
   const fromRemoteRef = useRef(false);
@@ -37,6 +54,7 @@ export function useRoomSync(
   // still gets pushed even though the original timer was cancelled.
   const localDirtyRef = useRef(false);
   const pushTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const unsubscribeRef = useRef<(() => void) | null>(null);
   // Keep dispatch stable in callbacks without needing it in dep arrays.
   const dispatchRef = useRef(dispatch);
@@ -45,6 +63,39 @@ export function useRoomSync(
   const stopListening = useCallback(() => {
     unsubscribeRef.current?.();
     unsubscribeRef.current = null;
+  }, []);
+
+  // Fetch remote state, merge by timestamp, and reconcile both sides.
+  const runPoll = useCallback(async (code: string) => {
+    const remoteGame = await fetchRoomGame(code);
+    if (!remoteGame) return;
+
+    const local = gameRef.current;
+    const remoteScores = remoteGame.scores ?? {};
+    const localScores = local.scores ?? {};
+
+    // Same merge logic as the REMOTE_UPDATE reducer case.
+    const mergedScores: Record<string, ScoreEntry> = { ...remoteScores };
+    for (const [key, localEntry] of Object.entries(localScores)) {
+      const remoteEntry = remoteScores[key];
+      if (!remoteEntry || localEntry.timestamp > remoteEntry.timestamp) {
+        mergedScores[key] = localEntry;
+      }
+    }
+
+    const remoteAhead = scoresDiffer(mergedScores, localScores);
+    const localAhead  = scoresDiffer(mergedScores, remoteScores);
+
+    if (remoteAhead) {
+      // Remote had newer cells — update local state with the merged result.
+      fromRemoteRef.current = true;
+      dispatchRef.current({ type: 'REMOTE_UPDATE', game: { ...remoteGame, scores: mergedScores } });
+    }
+
+    if (localAhead) {
+      // Local had newer cells Firebase doesn't know about — push the merged state.
+      await pushGameUpdate(code, { ...local, scores: mergedScores });
+    }
   }, []);
 
   const startListening = useCallback((code: string) => {
@@ -83,13 +134,22 @@ export function useRoomSync(
     if (!code || status !== 'online') return;
 
     const doPush = () => {
+      // Cancel any pending poll — a fresh push supersedes it.
+      if (pollTimerRef.current) clearTimeout(pollTimerRef.current);
+
       pushTimerRef.current = setTimeout(() => {
         localDirtyRef.current = false;
-        pushGameUpdate(code, game).catch((err) => {
-          console.error('[RoomSync] push failed:', err);
-          setStatus('error');
-          setError(String(err));
-        });
+        pushGameUpdate(code, game)
+          .then(() => {
+            // Schedule a reconciliation poll at a random 1–5s delay.
+            const jitter = 1000 + Math.random() * 4000;
+            pollTimerRef.current = setTimeout(() => runPoll(code), jitter);
+          })
+          .catch((err) => {
+            console.error('[RoomSync] push failed:', err);
+            setStatus('error');
+            setError(String(err));
+          });
       }, 400);
     };
 
@@ -112,7 +172,7 @@ export function useRoomSync(
     return () => {
       if (pushTimerRef.current) clearTimeout(pushTimerRef.current);
     };
-  }, [game, status]);
+  }, [game, status, runPoll]);
 
   // If the game already has a roomCode on mount, reconnect.
   useEffect(() => {
@@ -124,7 +184,10 @@ export function useRoomSync(
   }, []);
 
   // Cleanup on unmount.
-  useEffect(() => () => stopListening(), [stopListening]);
+  useEffect(() => () => {
+    stopListening();
+    if (pollTimerRef.current) clearTimeout(pollTimerRef.current);
+  }, [stopListening]);
 
   const startRoom = useCallback(async (): Promise<string> => {
     setStatus('connecting');
