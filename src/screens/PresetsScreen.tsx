@@ -4,6 +4,7 @@ import type { Preset } from '../types/preset';
 import { loadSavedPresets, savePreset, deletePreset } from '../services/storage';
 import { submitPreset, withdrawPreset, loadCommunityPresets, fetchSubmittedPresetStatuses } from '../services/presetService';
 import { PresetEditSheet } from '../components/presets/PresetEditSheet';
+import { BottomSheet } from '../components/layout/BottomSheet';
 import { Modal } from '../components/layout/Modal';
 import { Button } from '../components/shared/Button';
 import { cn } from '../lib/cn';
@@ -33,6 +34,7 @@ const tagStyles: Record<PresetTag, { label: string; className: string }> = {
 interface PresetCardProps {
   preset: Preset;
   tag?: PresetTag;
+  onView?: () => void;
   onEdit?: () => void;
   onCopy?: () => void;
   onDelete?: () => void;
@@ -41,7 +43,7 @@ interface PresetCardProps {
   submitting?: boolean;
 }
 
-function PresetCard({ preset, tag, onEdit, onCopy, onDelete, onSubmit, onWithdraw, submitting }: PresetCardProps) {
+function PresetCard({ preset, tag, onView, onEdit, onCopy, onDelete, onSubmit, onWithdraw, submitting }: PresetCardProps) {
   return (
     <div className={cn(
       'rounded-xl border p-4 space-y-2',
@@ -70,12 +72,19 @@ function PresetCard({ preset, tag, onEdit, onCopy, onDelete, onSubmit, onWithdra
         </div>
 
         <div className="flex items-center gap-1 shrink-0">
+          {onView && (
+            <button onClick={onView} className="p-2 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 transition-colors" aria-label="View preset">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+              </svg>
+            </button>
+          )}
           {onCopy && (
-            <button
-              onClick={onCopy}
-              className="px-3 py-1.5 rounded-lg bg-blue-600 text-white text-xs font-semibold"
-            >
-              Copy
+            <button onClick={onCopy} className="p-2 text-zinc-400 hover:text-blue-500 transition-colors" aria-label="Copy preset">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+              </svg>
             </button>
           )}
           {onEdit && (
@@ -123,6 +132,7 @@ export function PresetsScreen() {
   const [communityError, setCommunityError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState<string | null>(null);
   const [editingPreset, setEditingPreset] = useState<Preset | null>(null);
+  const [viewingPreset, setViewingPreset] = useState<Preset | null>(null);
   const [creating, setCreating] = useState(false);
   const [confirmSubmitPreset, setConfirmSubmitPreset] = useState<Preset | null>(null);
 
@@ -349,6 +359,7 @@ export function PresetsScreen() {
                       key={preset.id}
                       preset={{ ...preset, isBuiltIn: false }}
                       tag="community"
+                      onView={() => setViewingPreset(preset)}
                       onCopy={() => handleCopy(preset)}
                     />
                   ))}
@@ -375,6 +386,77 @@ export function PresetsScreen() {
         onClose={() => setCreating(false)}
         onSave={handleCreate}
       />
+
+      {/* View preset sheet (read-only) */}
+      <BottomSheet open={viewingPreset !== null} onClose={() => setViewingPreset(null)} title={viewingPreset?.name ?? 'Preset'}>
+        {viewingPreset && (
+          <div className="space-y-4">
+            {viewingPreset.description && (
+              <p className="text-sm text-zinc-500 dark:text-zinc-400">{viewingPreset.description}</p>
+            )}
+            {viewingPreset.increments && viewingPreset.increments.length > 0 && (
+              <div className="space-y-1.5">
+                <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400">Quick Score Buttons</p>
+                <div className="flex flex-wrap gap-2">
+                  {viewingPreset.increments.map((val) => (
+                    <span
+                      key={val}
+                      className={cn(
+                        'px-2.5 py-1 rounded-full text-sm font-medium',
+                        val < 0
+                          ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'
+                          : 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400',
+                      )}
+                    >
+                      {val > 0 ? '+' : ''}{val}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+            <div className="space-y-1.5">
+              <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400">Rows ({viewingPreset.rows.filter((r) => r.type !== 'group').length})</p>
+              {viewingPreset.rows.length === 0 ? (
+                <p className="text-xs text-zinc-400 dark:text-zinc-500">No rows defined.</p>
+              ) : (
+                <div className="space-y-1">
+                  {viewingPreset.rows.map((row, i) => (
+                    <div
+                      key={i}
+                      className={cn(
+                        'flex items-center gap-2 px-3 py-2 rounded-lg text-sm',
+                        row.type === 'group'
+                          ? 'bg-zinc-200 dark:bg-zinc-700 font-semibold text-zinc-700 dark:text-zinc-300'
+                          : 'bg-zinc-50 dark:bg-zinc-800/50 text-zinc-800 dark:text-zinc-200',
+                      )}
+                    >
+                      <span className={cn(
+                        'text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded shrink-0',
+                        row.type === 'group'
+                          ? 'bg-zinc-300 dark:bg-zinc-600 text-zinc-600 dark:text-zinc-300'
+                          : row.type === 'round'
+                          ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400'
+                          : 'bg-purple-100 dark:bg-purple-900/40 text-purple-600 dark:text-purple-400',
+                      )}>
+                        {row.type === 'group' ? 'section' : row.type}
+                      </span>
+                      <div className="flex-1 min-w-0">
+                        <span className="block truncate">{row.label}</span>
+                        {row.scoringRule?.formula && (
+                          <span className="block text-[10px] font-mono text-zinc-400 dark:text-zinc-500 truncate">{row.scoringRule.formula}</span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            <Button onClick={() => { handleCopy(viewingPreset); setViewingPreset(null); }} className="w-full">
+              Copy to My Presets
+            </Button>
+          </div>
+        )}
+      </BottomSheet>
 
       {/* Submit confirmation modal */}
       {confirmSubmitPreset && (

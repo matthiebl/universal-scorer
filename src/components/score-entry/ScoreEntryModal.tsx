@@ -137,7 +137,7 @@ export function ScoreEntryModal({
 
   const handleSave = () => {
     // If an operation is pending, evaluate it first
-    let value = currentValue;
+    let value = currentValue ?? 0;
     if (leftVal !== null && pendingOp !== null) {
       value = applyOp(leftVal, pendingOp, currentValue ?? 0);
     }
