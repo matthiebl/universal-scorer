@@ -154,7 +154,7 @@ export function ScoreEntryModal({
   const hint = leftVal !== null && pendingOp ? `${leftVal} ${pendingOp}` : null;
 
   return (
-    <BottomSheet open={open} onClose={onClose} title={rowLabel}>
+    <BottomSheet open={open} onClose={onClose} title={rowLabel} fullHeight>
       <div className="space-y-4">
         {/* Player indicator */}
         <div className="flex items-center gap-2">

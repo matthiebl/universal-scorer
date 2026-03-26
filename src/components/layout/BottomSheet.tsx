@@ -6,10 +6,11 @@ interface BottomSheetProps {
   open: boolean;
   onClose: () => void;
   title?: string;
+  fullHeight?: boolean;
   children: ReactNode;
 }
 
-export function BottomSheet({ open, onClose, title, children }: BottomSheetProps) {
+export function BottomSheet({ open, onClose, title, fullHeight, children }: BottomSheetProps) {
   const sheetRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -39,7 +40,8 @@ export function BottomSheet({ open, onClose, title, children }: BottomSheetProps
         aria-label={title}
         className={cn(
           'relative z-10 w-full max-w-lg rounded-t-2xl bg-white dark:bg-zinc-900 shadow-2xl',
-          'animate-slide-up max-h-[85vh] flex flex-col',
+          'animate-slide-up flex flex-col',
+          fullHeight ? 'max-h-dvh' : 'max-h-[85vh]',
         )}
       >
         {/* Header */}

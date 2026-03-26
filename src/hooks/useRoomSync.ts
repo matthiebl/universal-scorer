@@ -32,6 +32,10 @@ export function useRoomSync(
   // Set to true immediately before dispatching a REMOTE_UPDATE so the push
   // effect knows not to echo it back to Firebase.
   const fromRemoteRef = useRef(false);
+  // True when there are local changes waiting to be pushed that haven't been
+  // sent to Firebase yet. Survives a remote-update echo so the merged state
+  // still gets pushed even though the original timer was cancelled.
+  const localDirtyRef = useRef(false);
   const pushTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const unsubscribeRef = useRef<(() => void) | null>(null);
   // Keep dispatch stable in callbacks without needing it in dep arrays.
@@ -72,25 +76,38 @@ export function useRoomSync(
   }, [stopListening]);
 
   // Push local changes to Firebase, debounced by 400ms.
-  // Skips remote-originated updates to prevent echo loops.
+  // Skips remote-originated updates to prevent echo loops, but reschedules
+  // the push if local changes survived the merge (localDirtyRef).
   useEffect(() => {
     const code = roomCodeRef.current;
     if (!code || status !== 'online') return;
 
-    // This update came from Firebase — don't push it back.
+    const doPush = () => {
+      pushTimerRef.current = setTimeout(() => {
+        localDirtyRef.current = false;
+        pushGameUpdate(code, game).catch((err) => {
+          console.error('[RoomSync] push failed:', err);
+          setStatus('error');
+          setError(String(err));
+        });
+      }, 400);
+    };
+
     if (fromRemoteRef.current) {
       fromRemoteRef.current = false;
-      return;
+      // The effect cleanup already cancelled the pending timer. If we had
+      // local changes that survived the merge, reschedule the push so they
+      // still make it to Firebase.
+      if (localDirtyRef.current) doPush();
+      return () => {
+        if (pushTimerRef.current) clearTimeout(pushTimerRef.current);
+      };
     }
 
+    // Local change — mark dirty and schedule the push.
+    localDirtyRef.current = true;
     if (pushTimerRef.current) clearTimeout(pushTimerRef.current);
-    pushTimerRef.current = setTimeout(() => {
-      pushGameUpdate(code, game).catch((err) => {
-        console.error('[RoomSync] push failed:', err);
-        setStatus('error');
-        setError(String(err));
-      });
-    }, 400);
+    doPush();
 
     return () => {
       if (pushTimerRef.current) clearTimeout(pushTimerRef.current);
