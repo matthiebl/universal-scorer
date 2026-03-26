@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { Player } from '../../types/game';
 import type { Preset } from '../../types/preset';
 import { Modal } from '../layout/Modal';
@@ -6,39 +6,32 @@ import { Input } from '../shared/Input';
 import { Button } from '../shared/Button';
 import { PlayerSetup } from './PlayerSetup';
 import { PresetPicker } from './PresetPicker';
-import { loadSavedPresets, savePreset } from '../../services/storage';
+import { loadSavedPresets } from '../../services/storage';
 
 interface NewGameDialogProps {
   open: boolean;
   onClose: () => void;
   onCreate: (name: string, players: Omit<Player, 'id' | 'order'>[], preset: Preset | null) => void;
+  initialPlayers?: Omit<Player, 'id' | 'order'>[];
+  initialPreset?: Preset | null;
 }
 
-export function NewGameDialog({ open, onClose, onCreate }: NewGameDialogProps) {
+export function NewGameDialog({ open, onClose, onCreate, initialPlayers, initialPreset }: NewGameDialogProps) {
   const [name, setName] = useState('');
   const [players, setPlayers] = useState<Omit<Player, 'id' | 'order'>[]>([]);
   const [selectedPreset, setSelectedPreset] = useState<Preset | null>(null);
   const savedPresets = loadSavedPresets();
 
+  useEffect(() => {
+    if (!open) return;
+    if (initialPlayers?.length) setPlayers(initialPlayers);
+    if (initialPreset !== undefined) setSelectedPreset(initialPreset ?? null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
+
   const handleCreate = () => {
     const gameName = name.trim() || 'New Game';
     let preset = selectedPreset;
-
-    // If a community preset was selected (not already saved), copy it locally
-    if (preset && !preset.isBuiltIn) {
-      const savedIds = new Set(savedPresets.map((p) => p.id));
-      if (!savedIds.has(preset.id)) {
-        const localCopy: Preset = {
-          ...preset,
-          id: crypto.randomUUID(),
-          isBuiltIn: false,
-          isPublic: false,
-          createdAt: Date.now(),
-        };
-        savePreset(localCopy);
-        preset = localCopy;
-      }
-    }
 
     onCreate(gameName, players, preset);
     setName('');

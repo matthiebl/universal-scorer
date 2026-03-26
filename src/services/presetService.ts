@@ -55,6 +55,15 @@ export async function fetchSubmittedPresetStatuses(ids: string[]): Promise<Parti
   return snaps.filter((s) => s.exists()).map((s) => s.data() as Partial<Preset>);
 }
 
+/** Fetch a single approved community preset by its Firestore document ID. */
+export async function getPresetById(id: string): Promise<Preset | null> {
+  const snap = await getDoc(doc(firestore, PRESETS_COL, id));
+  if (!snap.exists()) return null;
+  const data = snap.data() as Preset;
+  if (!data.isPublic || !data.approvedAt) return null;
+  return { ...data, id: snap.id };
+}
+
 // Legacy exports for backward compatibility
 export const publishPreset = submitPreset;
 export const unpublishPreset = withdrawPreset;

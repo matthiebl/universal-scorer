@@ -12,7 +12,7 @@ export function JoinRoomScreen() {
   const [error, setError] = useState<string | null>(null);
 
   const normalized = normalizeRoomCode(code);
-  const canJoin = normalized.length === 6;
+  const canJoin = normalized.length === 4;
 
   const handleJoin = async () => {
     if (!canJoin || loading) return;
@@ -50,7 +50,7 @@ export function JoinRoomScreen() {
             className="p-2 -ml-2 rounded-lg text-zinc-500 hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-colors"
             aria-label="Back"
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
           </button>
@@ -60,7 +60,7 @@ export function JoinRoomScreen() {
 
       <main className="flex-1 max-w-lg mx-auto w-full px-4 flex flex-col items-center justify-center gap-6 py-12">
         <div className="text-center">
-          <p className="text-zinc-500 dark:text-zinc-400 text-sm">Enter the 6-character room code to join a game in progress.</p>
+          <p className="text-zinc-500 dark:text-zinc-400 text-sm">Enter the 4-character room code to join a game in progress.</p>
         </div>
 
         <input
@@ -68,12 +68,12 @@ export function JoinRoomScreen() {
           inputMode="text"
           autoCapitalize="characters"
           autoFocus
-          maxLength={6}
-          placeholder="ABC123"
+          maxLength={4}
+          placeholder="A2B3"
           value={code}
           onChange={(e) => {
             setError(null);
-            setCode(normalizeRoomCode(e.target.value).slice(0, 6));
+            setCode(normalizeRoomCode(e.target.value).slice(0, 4));
           }}
           onKeyDown={(e) => { if (e.key === 'Enter') handleJoin(); }}
           className="w-full text-center text-4xl font-mono font-bold tracking-[0.25em] rounded-2xl border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 px-4 py-5 focus:outline-none focus:ring-2 focus:ring-blue-500 uppercase"

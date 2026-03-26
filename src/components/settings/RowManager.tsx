@@ -79,26 +79,26 @@ export function RowManager({ rows, onUpdate, onRemove, onMoveUp, onMoveDown }: R
               <Button size="sm" variant="ghost" onClick={() => setEditingId(null)}>✕</Button>
             </div>
           ) : (
-            <div className="flex items-center gap-2 px-3 py-2">
+            <div className="flex items-center gap-1 px-3 py-2">
               {/* Reorder arrows */}
               <div className="flex flex-col gap-0.5 shrink-0">
                 <button
                   onClick={() => onMoveUp(row.id)}
                   disabled={i === 0}
-                  className={cn('p-2 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200', i === 0 && 'opacity-30')}
+                  className={cn('p-1 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200', i === 0 && 'opacity-30')}
                   aria-label="Move up"
                 >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
                   </svg>
                 </button>
                 <button
                   onClick={() => onMoveDown(row.id)}
                   disabled={i === flat.length - 1}
-                  className={cn('p-2 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200', i === flat.length - 1 && 'opacity-30')}
+                  className={cn('p-1 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200', i === flat.length - 1 && 'opacity-30')}
                   aria-label="Move down"
                 >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                   </svg>
                 </button>
@@ -106,7 +106,7 @@ export function RowManager({ rows, onUpdate, onRemove, onMoveUp, onMoveDown }: R
 
               {/* Type badge */}
               <span className={cn(
-                'text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded shrink-0',
+                'text-[10px] font-bold uppercase tracking-wider mx-2 py-0.5 rounded shrink-0',
                 isGroupHeader
                   ? 'bg-zinc-300 dark:bg-zinc-600 text-zinc-600 dark:text-zinc-300'
                   : row.type === 'round'
@@ -122,19 +122,19 @@ export function RowManager({ rows, onUpdate, onRemove, onMoveUp, onMoveDown }: R
 
               <button
                 onClick={() => { setEditingId(row.id); setEditLabel(row.label); }}
-                className="p-2.5 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 transition-colors shrink-0"
+                className="p-2 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 transition-colors shrink-0"
                 aria-label="Rename"
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536M9 13l6.586-6.586a2 2 0 012.828 2.828L11.828 15.828a2 2 0 01-1.414.586H8v-2.414a2 2 0 01.586-1.414z" />
                 </svg>
               </button>
               <button
                 onClick={() => onRemove(row.id)}
-                className="p-2.5 text-zinc-400 hover:text-red-500 transition-colors shrink-0"
+                className="p-2 text-zinc-400 hover:text-red-500 transition-colors shrink-0"
                 aria-label="Delete row"
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                 </svg>
               </button>

@@ -158,10 +158,20 @@ export function gameReducer(state: Game, action: GameAction): Game {
     }
 
     case 'REMOTE_UPDATE': {
-      // Firebase omits empty objects/arrays, so normalise missing fields.
+      // Merge scores per-cell by timestamp so concurrent edits to different
+      // cells don't clobber each other. Local entry wins if its timestamp is
+      // higher (or remote doesn't have the key yet); otherwise remote wins.
+      const remoteScores = action.game.scores ?? {};
+      const mergedScores: Record<string, ScoreEntry> = { ...remoteScores };
+      for (const [key, localEntry] of Object.entries(state.scores)) {
+        const remoteEntry = remoteScores[key];
+        if (!remoteEntry || localEntry.timestamp > remoteEntry.timestamp) {
+          mergedScores[key] = localEntry;
+        }
+      }
       return {
         ...action.game,
-        scores: action.game.scores ?? {},
+        scores: mergedScores,
         players: action.game.players ?? [],
         rows: action.game.rows ?? [],
         diceHistory: action.game.diceHistory ?? [],

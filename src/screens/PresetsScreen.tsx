@@ -69,7 +69,7 @@ function PresetCard({ preset, tag, onEdit, onCopy, onDelete, onSubmit, onWithdra
           </p>
         </div>
 
-        <div className="flex items-center gap-0.5 shrink-0">
+        <div className="flex items-center gap-1 shrink-0">
           {onCopy && (
             <button
               onClick={onCopy}
@@ -79,29 +79,29 @@ function PresetCard({ preset, tag, onEdit, onCopy, onDelete, onSubmit, onWithdra
             </button>
           )}
           {onEdit && (
-            <button onClick={onEdit} className="p-1.5 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 transition-colors" aria-label="Edit preset">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <button onClick={onEdit} className="p-2 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 transition-colors" aria-label="Edit preset">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536M9 13l6.586-6.586a2 2 0 012.828 2.828L11.828 15.828a2 2 0 01-1.414.586H8v-2.414a2 2 0 01.586-1.414z" />
               </svg>
             </button>
           )}
           {onSubmit && (
-            <button onClick={onSubmit} disabled={submitting} className="p-1.5 text-zinc-400 hover:text-blue-500 transition-colors disabled:opacity-40" aria-label="Submit to community">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <button onClick={onSubmit} disabled={submitting} className="p-2 text-zinc-400 hover:text-blue-500 transition-colors disabled:opacity-40" aria-label="Submit to community">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
               </svg>
             </button>
           )}
           {onWithdraw && (
-            <button onClick={onWithdraw} disabled={submitting} className="p-1.5 text-amber-500 hover:text-zinc-400 transition-colors disabled:opacity-40" aria-label="Withdraw submission">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <button onClick={onWithdraw} disabled={submitting} className="p-2 text-amber-500 hover:text-zinc-400 transition-colors disabled:opacity-40" aria-label="Withdraw submission">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
               </svg>
             </button>
           )}
           {onDelete && (
-            <button onClick={onDelete} className="p-1.5 text-zinc-400 hover:text-red-500 transition-colors" aria-label="Delete preset">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <button onClick={onDelete} className="p-2 text-zinc-400 hover:text-red-500 transition-colors" aria-label="Delete preset">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
               </svg>
             </button>
@@ -250,7 +250,7 @@ export function PresetsScreen() {
               className="p-2 -ml-2 rounded-lg text-zinc-500 hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-colors"
               aria-label="Back"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>
             </button>

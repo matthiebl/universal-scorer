@@ -232,18 +232,18 @@ export function PresetEditSheet({ preset, open, onClose, onSave }: PresetEditShe
                         {row.scoringRule?.formula && ` · ${row.scoringRule.formula}`}
                       </span>
                     </div>
-                    <div className="flex items-center gap-0.5 shrink-0">
-                      <button type="button" onClick={() => handleMoveRow(i, -1)} disabled={i === 0} className="p-1 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 disabled:opacity-30" aria-label="Move up">
-                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" /></svg>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <button type="button" onClick={() => handleMoveRow(i, -1)} disabled={i === 0} className="p-1.5 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 disabled:opacity-30" aria-label="Move up">
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" /></svg>
                       </button>
-                      <button type="button" onClick={() => handleMoveRow(i, 1)} disabled={i === rows.length - 1} className="p-1 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 disabled:opacity-30" aria-label="Move down">
-                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                      <button type="button" onClick={() => handleMoveRow(i, 1)} disabled={i === rows.length - 1} className="p-1.5 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 disabled:opacity-30" aria-label="Move down">
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
                       </button>
-                      <button type="button" onClick={() => editingRowIndex === i ? setEditingRowIndex(null) : handleStartEditRow(i)} className={cn('p-1 transition-colors', editingRowIndex === i ? 'text-blue-500' : 'text-zinc-400 hover:text-blue-500')} aria-label="Edit row">
-                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536M9 13l6.586-6.586a2 2 0 012.828 2.828L11.828 15.828a2 2 0 01-1.414.586H8v-2.414a2 2 0 01.586-1.414z" /></svg>
+                      <button type="button" onClick={() => editingRowIndex === i ? setEditingRowIndex(null) : handleStartEditRow(i)} className={cn('p-1.5 transition-colors', editingRowIndex === i ? 'text-blue-500' : 'text-zinc-400 hover:text-blue-500')} aria-label="Edit row">
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536M9 13l6.586-6.586a2 2 0 012.828 2.828L11.828 15.828a2 2 0 01-1.414.586H8v-2.414a2 2 0 01.586-1.414z" /></svg>
                       </button>
-                      <button type="button" onClick={() => handleRemoveRow(i)} className="p-1 text-zinc-400 hover:text-red-500 transition-colors" aria-label="Remove row">
-                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                      <button type="button" onClick={() => handleRemoveRow(i)} className="p-1.5 text-zinc-400 hover:text-red-500 transition-colors" aria-label="Remove row">
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
                       </button>
                     </div>
                   </div>

@@ -21,20 +21,13 @@ function roomRef(code: string): DatabaseReference {
 
 /** Create a new room for a game. Returns the room code. */
 export async function createRoom(game: Game): Promise<string> {
-  // Try up to 5 codes to avoid collisions
-  for (let i = 0; i < 5; i++) {
-    const code = generateRoomCode();
-    const snap = await get(roomRef(code));
-    if (!snap.exists()) {
-      const sanitizedGame = JSON.parse(JSON.stringify({ ...game, roomCode: code })) as Game;
-      await set(roomRef(code), {
-        game: sanitizedGame,
-        meta: { createdAt: Date.now(), lastActivity: serverTimestamp() },
-      });
-      return code;
-    }
-  }
-  throw new Error('Failed to generate a unique room code. Please try again.');
+  const code = generateRoomCode();
+  const sanitizedGame = JSON.parse(JSON.stringify({ ...game, roomCode: code })) as Game;
+  await set(roomRef(code), {
+    game: sanitizedGame,
+    meta: { createdAt: Date.now(), lastActivity: serverTimestamp() },
+  });
+  return code;
 }
 
 /** Join an existing room. Returns the current game snapshot or null if not found. */
